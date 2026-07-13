@@ -1,0 +1,26 @@
+#cloud-config
+datasource:
+  Ec2:
+    strict_id: false
+ssh_pwauth: no
+users:
+  - name: ubuntu
+    groups: users,admin,wheel,sudo
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDw0pYSe4RbpkhRcRIpLqUuoqSZjs0M1knzruIoPvQkX OTUS key for CICD without pwd
+  - name: ansible
+    groups: users,admin,wheel,sudo
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDw0pYSe4RbpkhRcRIpLqUuoqSZjs0M1knzruIoPvQkX OTUS key for CICD without pwd
+
+write_files:
+  - content: |
+      # Bug fix. NOPASSWD ask for [ansible]
+      ansible ALL=(ALL) NOPASSWD: ALL
+    owner: root:root
+    permissions: "0600"
+    path: /etc/sudoers.d/ansible

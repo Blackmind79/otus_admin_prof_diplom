@@ -1,3 +1,12 @@
+# env
+ENV/
+.env
+.backend
+!env.example
+
+# local data
+data/
+
 # Local .terraform directories
 .terraform/
 
