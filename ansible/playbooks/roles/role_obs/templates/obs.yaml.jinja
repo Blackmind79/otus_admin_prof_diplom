@@ -1,0 +1,66 @@
+services:
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    command:
+      - "-config.file=/etc/mimir/config.yaml"
+    volumes:
+      - "{{ obs_path }}/mimir_config.yaml:/etc/mimir/config.yaml:ro"
+      - mimir_data:/data
+    ports:
+      - "9009:9009"
+    restart: unless-stopped
+    networks:
+      {{ docker.networks.net01 }}:
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - mimir
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: "{{ app_admin }}"
+      GF_SECURITY_ADMIN_PASSWORD: "{{ app_password }}"
+    volumes:
+      - "{{ obs_path }}/grafana.ini:/etc/grafana/grafana.ini"
+      - grafana_data:/var/lib/grafana
+      - grafana_provisioning:/etc/grafana/provisioning:ro
+      - grafana_dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+    networks:
+      {{ docker.networks.net01 }}:
+
+networks:
+  {{ docker.networks.net01 }}:
+
+volumes:
+
+  mimir_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ mimir_path }}"
+
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ grafana_path }}"
+
+  grafana_provisioning:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ grafana_provisioning_path }}"
+
+  grafana_dashboards:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ grafana_dashboards_path }}"

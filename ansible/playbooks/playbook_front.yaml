@@ -1,0 +1,13 @@
+# code: language=yaml
+# playbooks/playbook_front.yaml
+---
+- name: "Configuration [front]"
+  vars_files:
+    - ../.vault.enc
+  hosts:
+    - front
+  become: true
+  gather_facts: true
+  roles:
+    - role: role_front
+      when: ansible_facts["system"] | lower == "linux"

@@ -1,0 +1,12 @@
+# code: language=yaml
+---
+- name: "Configuration [obs]"
+  vars_files:
+    - ../.vault.enc
+  hosts:
+    - obs
+  become: true
+  gather_facts: true
+  roles:
+    - role: role_obs
+      when: ansible_facts["system"] | lower == "linux"

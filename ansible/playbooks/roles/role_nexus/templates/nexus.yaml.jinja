@@ -1,0 +1,34 @@
+services:
+  nexus:
+    image: sonatype/nexus3:latest
+    container_name: nexus
+    ports:
+      - "8081:8081" # GUI
+      - "7000:7000" # Docker hosted repository
+      - "5005:5005" # Docker proxy
+    volumes:
+      - nexus_data:/nexus-data
+    restart: always
+    privileged: true
+    user: root
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      {{ docker.networks.net01 }}:
+
+networks:
+  {{ docker.networks.net01 }}:
+
+volumes:
+
+  nexus_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ nexus_data_path }}"

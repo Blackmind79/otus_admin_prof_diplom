@@ -1,0 +1,42 @@
+# code: language=yaml
+
+#below the info for all servers
+---
+ansible_python_interpreter: "/usr/bin/python3"
+ansible_user: "{{ global_remote_user }}" # for HyperV VM or Windows based
+ansible_become_password: "{{ global_ansible_become_password }}"
+ansible_become: true
+ansible_become_method: sudo
+ansible_become_user: root
+ansible_ssh_private_key_file: "{{ global_general_sshkey }}"
+owner: "{{ global_owner }}"
+email: "{{ global_email }}"
+
+# Defaults
+def_compose: "compose.yaml"
+
+# App creds
+app_admin: "{{ app_admin }}"
+app_password: "{{ app_password }}"
+
+# packages
+system_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# docker
+docker:
+  # docker_insecure_registries:
+  #   registry01:
+  #     host: "192.168.0.2"
+  #     port: "5005"
+  networks:
+    net01: "frontend"

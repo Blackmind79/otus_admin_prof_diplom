@@ -1,0 +1,40 @@
+---
+all:
+  vars:
+    docker_daemon_options: '{"log-driver": "json-file"}'
+    # ansible_ssh_common_args: >-
+    #   -o ProxyJump={{ ansible_user }}@81.26.178.41
+    #   -o IdentitiesOnly=yes
+
+  children:
+    front:
+      hosts:
+        front_001:
+          ansible_host: 10.130.0.32
+
+    obs:
+      hosts:
+        obs_001:
+          ansible_host: 10.130.0.21
+
+    nexus:
+      hosts:
+        nexus_001:
+          ansible_host: 10.130.0.17
+
+    # databases:
+    #   hosts:
+    #     db_main:
+    #       ansible_host: 10.130.0.
+    #     db_replica:
+    #       ansible_host: 10.130.0.
+    #   vars:
+    #     postgresql_user: "{{ postgresql_user }}"
+    #     postgresql_password: "{{ postgresql_password }}"
+
+    # production:
+    #   hosts:
+    #     prod-web:
+    #       ansible_host: prod.example.com
+    #       ansible_user: root
+    #       ansible_ssh_private_key_file: /secure/prod-key.pem

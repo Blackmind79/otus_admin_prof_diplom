@@ -1,0 +1,36 @@
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "{{ obs_server_proto }}://{{ obs_server_fqdn }}:{{ obs_server_port }}/api/v1/push"
+
+    headers = {
+      "X-Scope-OrgID" = "fake",
+    }
+
+    queue_config {
+      capacity             = 10000
+      max_samples_per_send = 1000
+      batch_send_deadline  = "10s"
+    }
+  }
+}
+
+
+prometheus.exporter.unix "system" {}
+
+prometheus.scrape "system" {
+  targets = prometheus.exporter.unix.system.targets
+
+  forward_to = [
+    prometheus.remote_write.mimir.receiver,
+  ]
+}
+
+prometheus.exporter.cadvisor "docker" {}
+
+prometheus.scrape "docker" {
+  targets = prometheus.exporter.cadvisor.docker.targets
+
+  forward_to = [
+    prometheus.remote_write.mimir.receiver,
+  ]
+}

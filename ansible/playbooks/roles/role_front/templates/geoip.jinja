@@ -1,0 +1,48 @@
+geoip2 /usr/share/geoip/GeoLite2-City.mmdb {
+  #В случае, если у вас настроено подключение к ЛК на maxmind, то включите автообновление баз (предварительно настройте через cron)
+  #auto_reload 60m;
+  $geoip2_metadata_city_build metadata build_epoch;
+  $geoip2_data_country_name country names en;
+  $geoip2_data_country_code country iso_code;
+  $geoip2_data_city_name city names en;
+  $geoip2_data_region_name subdivisions 0 names en;
+  $geoip2_data_state_code  subdivisions 0 iso_code;
+}
+
+map "$geoip2_data_country_code:$geoip2_data_state_code" $allowed_geoip {
+  default no;
+  ~^RU: yes; #Россия
+  ~^BY: yes; #Белоруссия
+  ~^AM: yes; #Армения
+  ~^KZ: yes; #Казахстан
+  ~^KG: yes; #Кыргызстан
+  UA:40 yes; #Севастополь
+  UA:43 yes; #Крым
+  UA:14 yes; #Донецкая область
+  UA:09 yes; #Луганская область
+  UA:23 yes; #Запорожская область
+  UA:65 yes; #Херсонская область
+  GE:AB yes; #Абхазия
+}
+
+geo $allowed_subnets {
+    default         no;
+    127.0.0.0/8     yes;
+    169.254.0.0/16  yes;
+    10.0.0.0/8      yes;
+    192.168.0.0/16  yes;
+    172.16.0.0/12   yes;
+}
+#Block forbidden country
+map $allowed_geoip $match_first {
+  default 0;
+  no 1;
+}
+map $allowed_subnets $match_second {
+  default 0;
+  no 1;
+}
+map "$match_first$match_second" $match{
+  default 0;
+  11 1;
+}

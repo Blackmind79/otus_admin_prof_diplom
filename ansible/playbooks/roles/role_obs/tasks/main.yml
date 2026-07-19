@@ -1,0 +1,105 @@
+# --> Folders
+- name: "Create global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}" # same as user
+  loop: "{{ obs_local_directories }}"
+# <-- Folders
+
+# --> OBS-server
+- name: "Copy compose file"
+  ansible.builtin.template:
+    src: "obs.yaml.jinja"
+    dest: "{{ obs_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy mimir config file"
+  ansible.builtin.template:
+    src: "mimir_config.yaml.jinja"
+    dest: "{{ obs_path }}/mimir_config.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+# /etc/grafana/grafana.ini
+- name: "Copy grafana.ini"
+  ansible.builtin.template:
+    src: "grafana.ini.jinja"
+    dest: "{{ obs_path }}/grafana.ini"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+## --> Alerting
+# grafana_provisioning_alerting_path
+- name: "Copy grafana alerting files (CP)"
+  ansible.builtin.template:
+    src: "grafana.contact-points.yaml.jinja"
+    dest: "{{ grafana_provisioning_alerting_path }}/contact-points.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy grafana alerting files (NP)"
+  ansible.builtin.template:
+    src: "grafana.notification-policies.yaml.jinja"
+    dest: "{{ grafana_provisioning_alerting_path }}/notification-policies.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy grafana alerting files (AR)"
+  ansible.builtin.template:
+    src: "grafana.alert-rules.yaml.jinja"
+    dest: "{{ grafana_provisioning_alerting_path }}/alert-rules.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+## <-- Alerting
+
+
+
+
+
+
+# grafana/provisioning/datasources/datasource.yaml
+- name: "Copy grafana datasource file"
+  ansible.builtin.template:
+    src: "datasource.yaml.jinja"
+    dest: "{{ grafana_provisioning_datasources_path }}/datasource.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+# grafana/provisioning/dashboards/dashboard.yaml
+- name: "Copy grafana datasource file"
+  ansible.builtin.template:
+    src: "dashboard.yaml.jinja"
+    dest: "{{ grafana_provisioning_dashboards_path }}/dashboard.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+# grafana/dashboards/1860.json
+- name: "Copy grafana dashboard 1860 file"
+  ansible.builtin.copy:
+    src: "1860.json"
+    dest: "{{ grafana_dashboards_path }}/1860.json"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Stop and remove containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ obs_path }}"
+    state: absent
+
+- name: "Start containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ obs_path }}"
+    state: present
+# <-- OBS-server

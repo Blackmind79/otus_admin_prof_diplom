@@ -1,0 +1,14 @@
+# code: language=yaml
+---
+angie_path: "/opt/angie"
+angie_path_httpd: "{{ angie_path }}/data/http.d"
+angie_certs_folder: "/opt/certs"
+
+front_local_directories:
+  - "{{ angie_certs_folder }}"
+  - "{{ angie_path }}"
+  - "{{ angie_path }}/data/geoip"
+  - "{{ angie_path }}/data/data"
+  - "{{ angie_path }}/data/logs"
+  - "{{ angie_path }}/data/stream.d"
+  - "{{ angie_path_httpd }}"

@@ -8,7 +8,7 @@ set -euo pipefail
 # Создание папки для хранения ключа (можно сразу удалить ключ после записи в конфиг)
 FLD_NAME="./ENV"
 mkdir -p "${FLD_NAME}"
-chmod 700 -R "${FLD_NAME}"
+chmod -R 700 "${FLD_NAME}"
 
 # Создание сервисного аккаунта
 yc iam service-account create --name "${SERVICE_ACCOUNT_NAME}"

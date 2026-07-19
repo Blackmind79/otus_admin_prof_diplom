@@ -1,0 +1,24 @@
+server {
+  listen 80;
+  server_name otus.orouzeroo.ru;
+
+#  modsecurity on;
+#  modsecurity_rules_file /etc/angie/modsecurity/rules.conf;
+
+#  #Block by IP. Parameter configured at HTTP block
+#  if ($match) {
+#    return 406;
+#  }
+
+  location =/p8s {
+    prometheus all;
+    allow   127.0.0.1;
+    allow   10.130.0.0/24;
+    deny    all;
+ }
+
+#  return 444;
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}

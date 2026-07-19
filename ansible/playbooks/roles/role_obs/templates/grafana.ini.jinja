@@ -1,0 +1,9 @@
+[smtp]
+enabled = true
+host = {{ smtp_host }}
+user = {{ smtp_user }}
+password = {{ smtp_password }}
+from_address = {{ smtp_user }}
+from_name = Grafana-Monitoring
+skip_verify = false
+startTLS_policy = OpportunisticStartTLS

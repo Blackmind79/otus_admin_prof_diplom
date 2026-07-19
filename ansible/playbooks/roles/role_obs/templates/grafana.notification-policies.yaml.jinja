@@ -1,0 +1,50 @@
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    # Точка контакта по умолчанию
+    receiver: 'Email-алерты'
+    
+    # Группировка по имени алерта
+    group_by:
+      - 'alertname'
+      - 'severity'
+    
+    # Временные интервалы для группировки
+    group_wait: 30s          # Ждать перед отправкой первого уведомления
+    group_interval: 5m       # Интервал между уведомлениями для одной группы
+    repeat_interval: 4h      # Повторять уведомления каждые 4 часа
+    
+    # Вложенные политики для разных уровней важности
+    policies:
+      # Критические алерты - отправляем сразу всем
+      - receiver: 'Email-алерты'
+        matchers:
+          - label: 'severity'
+            match: '='
+            value: 'critical'
+        group_wait: 10s
+        repeat_interval: 1h
+        continue: true
+      
+      # Предупреждения - группируем по экземпляру
+      - receiver: 'Email-алерты'
+        matchers:
+          - label: 'severity'
+            match: '='
+            value: 'warning'
+        group_by:
+          - 'alertname'
+          - 'instance'
+        group_interval: 15m
+        repeat_interval: 6h
+      
+      # Алерты с тегом environment=production
+      - receiver: 'Email-алерты'
+        matchers:
+          - label: 'environment'
+            match: '='
+            value: 'production'
+        group_by:
+          - 'alertname'
+        repeat_interval: 2h

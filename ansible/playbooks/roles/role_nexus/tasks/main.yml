@@ -1,0 +1,36 @@
+# --> Folders
+- name: "Create global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}" # same as user
+  loop: "{{ nexus_local_directories }}"
+
+- name: "Create nexus data folders"
+  file:
+    path: "{{ nexus_data_path }}"
+    state: directory
+    owner: 200
+    group: "{{ global_remote_user }}"
+# <-- Folders
+
+# --> Nexus-server
+- name: "Copy compose file"
+  ansible.builtin.template:
+    src: "nexus.yaml.jinja"
+    dest: "{{ nexus_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Stop and remove nexus containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ nexus_path }}"
+    state: absent
+
+- name: "Start nexus containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ nexus_path }}"
+    state: present
+# <-- Nexus-server

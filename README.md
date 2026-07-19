@@ -120,3 +120,80 @@ yc dns zone create \
 Образ ВМ: fd8u10mhsprdmr9rotp4
 Семейство образа: ubuntu-2604-lts
 ```
+
+## Скрипты
+
+### Создание сервисного аккаунта и получение ключа
+
+Привожу пример скрипта для создания сервисного аккаунта
+
+```bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SERVICE_ACCOUNT_NAME=<имя вашего создаваемого сервисного аккаунта>
+FOLDER_ID=<id вашего каталога>
+
+# Создание папки для хранения ключа (можно сразу удалить ключ после записи в конфиг)
+FLD_NAME="./ENV"
+mkdir -p "${FLD_NAME}"
+chmod -R 700 "${FLD_NAME}"
+
+# Создание сервисного аккаунта
+yc iam service-account create --name "${SERVICE_ACCOUNT_NAME}"
+
+# Назначение роли admin(или editor и resource-manager.admin для S3)
+yc resource-manager folder add-access-binding \
+  --id "${FOLDER_ID}" \
+  --role admin \
+  --service-account-name "${SERVICE_ACCOUNT_NAME}"
+
+# Создание авторизованного ключа
+yc iam key create \
+  --service-account-name "${SERVICE_ACCOUNT_NAME}" \
+  --folder-id "${FOLDER_ID}" \
+  --output "${FLD_NAME}/key.json"
+
+# Запись ключа в текущий активный конфиг
+yc config set service-account-key "${FLD_NAME}/key.json"
+
+# Убедитесь, что параметры для сервисного аккаунта добавлены верно:
+yc config list
+
+# Удалите ключ, если нужно
+#rm -f "${FLD_NAME}/key.json"
+```
+
+### Создание S3 бакета
+
+Создание S3 бакета в Яндекс Облаке
+
+```bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SERVICE_ACCOUNT_NAME=<имя вашего создаваемого сервисного аккаунта>
+FOLDER_ID=<id вашего каталога>
+
+S3_BUCKET_NAME=s3-otus
+S3_STORAGE_CLASS=standard
+
+# Создать S3-бакет (50Gb, standard)
+yc storage bucket create \
+  --name "${S3_BUCKET_NAME}" \
+  --default-storage-class "${S3_STORAGE_CLASS}" \
+  --max-size 53687091200 \
+  --public-read=false \
+  --public-list=false \
+  --public-config-read=false
+
+# Назначение прав на каталог
+yc resource-manager folder add-access-binding "${FOLDER_ID}" \
+  --role storage.uploader \
+  --service-account-name "${SERVICE_ACCOUNT_NAME}"
+
+# Генерация статического ключа доступа (запишите полученные key_id и secret например в файл .backend)
+yc iam access-key create --service-account-name "${SERVICE_ACCOUNT_NAME}"
+```

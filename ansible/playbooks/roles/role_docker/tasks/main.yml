@@ -1,0 +1,125 @@
+# code: language=ansible
+---
+
+# --> System update / upgrade
+- name: "Update system packages and clean up"
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+    upgrade: dist
+    autoremove: yes
+    autoclean: yes
+  become: true
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 3
+  delay: 10
+
+- name: Set timezone
+  timezone:
+    name: Europe/Moscow
+# <-- System update / upgrade
+
+# --> Install required system packages
+- name: "Install required system packages"
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  loop: "{{ system_packages }}"
+# <-- Install required system packages
+
+
+# --> Docker
+- name: "Add Docker GPG apt Key"
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/trusted.gpg.d/docker.asc
+    #-rw-r--r--
+    mode: '0644'
+    force: true
+
+## Old Debian-based
+# - name: "Add Docker Repository"
+#   apt_repository:
+#     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_facts.distribution_release|lower }} stable"
+#     state: present
+#     filename: docker_repository
+
+- name: "Add Docker repository"
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "https://download.docker.com/linux/ubuntu"
+    suites: "{{ ansible_facts.distribution_release | lower }}"
+    components: [stable]
+    architectures: [amd64]
+    signed_by: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+    enabled: yes
+
+- name: "Update apt and install docker-ce"
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  loop: "{{ docker_packages }}"
+
+- name: "Copy Docker's daemon.json"
+  ansible.builtin.template:
+    src: "daemon.json.jinja"
+    dest: "/etc/docker/daemon.json"
+    # -rw-r--r-- root root 
+    owner: root
+    group: root
+    mode: "0644"
+  register: register_copy_docker_daemon_json
+  notify: "restart docker"
+
+- name: "Result of copying Docker's daemon.json"
+  ansible.builtin.debug:
+    msg:
+      - "{{ register_copy_docker_daemon_json.stdout_lines|default(register_copy_docker_daemon_json) }}"
+  tags:
+    - debug
+
+- name: "Create Docker networks"
+  community.docker.docker_network:
+    name: "{{ item.value }}"
+  loop: "{{ docker.networks | dict2items }}"    
+# <-- Docker
+
+# --> Folders 
+- name: "Create global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}" # same as user
+  loop: "{{ local_directories }}"
+# <-- Folders
+
+# --> Monitoring
+- name: "Copy monitoring manifest file"
+  ansible.builtin.template:
+    src: "{{ obs_config_alloy }}.jinja"
+    dest: "{{ obs_path }}/{{ obs_config_alloy }}"
+    #-rw-r--r--
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy monitoring compose file"
+  ansible.builtin.template:
+    src: "alloy.yaml.jinja"
+    dest: "{{ obs_path }}/{{ def_compose }}"
+    #-rw-r--r--
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Deploy NODE monitoring service"
+  community.docker.docker_compose_v2:
+    project_src: "{{ obs_path }}"
+    state: present
+# <-- Monitoring

@@ -1,0 +1,5 @@
+# code: language=yaml
+---
+enviroment: front
+enviroment_type: gateway
+

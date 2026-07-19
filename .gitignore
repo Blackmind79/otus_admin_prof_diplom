@@ -7,6 +7,10 @@ ENV/
 # local data
 data/
 
+# Anisble secrets
+.vault*
+#!.vault.enc
+
 # Local .terraform directories
 .terraform/
 

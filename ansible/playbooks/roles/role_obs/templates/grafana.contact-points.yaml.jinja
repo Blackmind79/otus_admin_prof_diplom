@@ -1,0 +1,18 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: 'Email-алерты'
+    receivers:
+      - uid: email-receiver-1
+        type: email
+        settings:
+          # Список получателей через точку с запятой
+          addresses: "{{ smtp_user }}"
+          # Отправлять все алерты в одном письме
+          singleEmail: true
+          # Тема письма (поддерживаются шаблоны)
+          {% raw %}
+          subject: '{{ .CommonLabels.alertname }} - {{ .Status }}'
+          {% endraw %}          
+

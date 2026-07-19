@@ -1,3 +1,16 @@
+## --> DNS zone
+# --> otus-internal
+output "yandex_dns_zone" {
+  description = "DNS zone"
+  value       = yandex_dns_zone.otus-internal.zone
+}
+output "yandex_dns_zone_id" {
+  description = "DNS Zone ID"
+  value       = yandex_dns_zone.otus-internal.id
+}
+# <-- otus-internal
+## <-- DNS zone
+
 ## --> Security groups
 output "sg-server-postgre-internal" {
   value = yandex_vpc_security_group.sg-server-postgre-internal.id
@@ -19,38 +32,26 @@ output "sg-front-id" {
 # }
 ## <-- Security groups
 
-# ## --> Instances
-# # --> srv-front-001
-# output "internal_ip_srv-front-001" {
-#   value = yandex_compute_instance.srv-front-001.network_interface.0.ip_address
-# }
-# output "external_ip_srv-front-001" {
-#   value = yandex_compute_instance.srv-front-001.network_interface.0.nat_ip_address
-# }
-# output "srv-front-001-id" {
-#   value = yandex_compute_instance.srv-front-001.id
-# }
-# output "srv-front-001-hostname" {
-#   value = yandex_compute_instance.srv-front-001.hostname
-# }
-# output "srv-front-001-fqdn" {
-#   value = yandex_compute_instance.srv-front-001.fqdn
-# }
-# output "srv-front-001-zone" {
-#   value = yandex_compute_instance.srv-front-001.zone
-# }
-# # <-- srv-front-001
-# ## <-- Instances
-
-## --> DNS zone
-# --> otus-internal
-output "yandex_dns_zone" {
-  description = "DNS zone"
-  value       = yandex_dns_zone.otus-internal.zone
+## --> Instances
+# --> srv-front-001
+output "internal_ip_srv-front-001" {
+  value = yandex_compute_instance.srv-front-001.network_interface.0.ip_address
 }
-output "yandex_dns_zone_id" {
-  description = "DNS Zone ID"
-  value       = yandex_dns_zone.otus-internal.id
+output "external_ip_srv-front-001" {
+  value = yandex_compute_instance.srv-front-001.network_interface.0.nat_ip_address
 }
-# <-- otus-internal
-## <-- DNS zone
+output "srv-front-001-id" {
+  value = yandex_compute_instance.srv-front-001.id
+}
+output "srv-front-001-hostname" {
+  value = yandex_compute_instance.srv-front-001.hostname
+}
+output "srv-front-001-fqdn" {
+  value = yandex_compute_instance.srv-front-001.fqdn
+}
+output "srv-front-001-zone" {
+  value = yandex_compute_instance.srv-front-001.zone
+  sensitive = true
+}
+# <-- srv-front-001
+## <-- Instances

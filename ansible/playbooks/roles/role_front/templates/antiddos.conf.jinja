@@ -1,0 +1,28 @@
+# https://en.wikipedia.org/wiki/Reserved_IP_addresses
+
+geo $limited {
+  default        1;
+  10.0.0.0/8     0;
+  127.0.0.0/8    0;
+  172.16.0.0/12  0;
+  192.168.0.0/16 0;
+  169.254.0.0/16 0;
+}
+
+map $limited $limit {
+    1 $binary_remote_addr;
+    0 "";
+}
+
+# For test endpoints
+geo $test {
+  default          1;
+  192.168.250.0/24 0;
+}
+
+map $test $testlimit {
+    1 $binary_remote_addr;
+    0 "";
+}
+
+limit_req_zone $limit zone=antiddos:10m rate=10r/s;

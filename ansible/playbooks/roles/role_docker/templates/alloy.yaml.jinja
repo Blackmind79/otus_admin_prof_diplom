@@ -1,0 +1,17 @@
+services:
+  alloy:
+    image: "grafana/alloy:latest"
+    container_name: alloy
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      # define config for alloy
+      - ./{{ obs_config_alloy }}:/etc/alloy/config.alloy:ro
+      # needed proc
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /:/host/rootfs:ro
+      - /sys:/host/sys:ro
+    environment:
+      HOST_IP: "{{ ansible_facts.default_ipv4.address }}"

@@ -1,0 +1,8 @@
+# code: language=yaml
+---
+nexus_path: "/opt/nexus"
+nexus_data_path: "{{ nexus_path }}/data"
+
+nexus_local_directories:
+  - "{{ nexus_path }}"
+

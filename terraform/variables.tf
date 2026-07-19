@@ -86,17 +86,19 @@ variable "reserved_external_ip" {
   )
 }
 
-# variable "os_ubuntu-2404-lts-oslogin-name" {
-#   description = "OS image ubuntu-2404-lts-oslogin Name"
-#   type        = string
-#   sensitive   = false
-# }
+variable "yc_subnets_prefix_list" {
+  description = "Subnet prefix list"
+  type    = list(string)
+}
 
-# variable "disk_type_network_hdd" {
-#   description = "Type of the disk: network_hdd"
-#   type        = string
-#   sensitive   = false
-# }
+## --> Images
+variable "ubuntu2604_image_id" {
+  description = "OS image ID of ubuntu-2604"
+  type        = string
+  sensitive   = false
+}
+ 
+## <-- Images
 
 # # --> OS Login
 # variable "os_login" {
@@ -117,3 +119,45 @@ variable "reserved_external_ip" {
 #   }
 # }
 # # <-- OS Login
+
+# Route tables
+variable "route_table_main" {
+  description = "Main route table"
+  type        = string
+  sensitive   = false
+}
+
+
+# VMs
+variable "vm_front" {
+  description = "VM HTTPS gateway"
+  type        = string
+  sensitive   = false
+}
+variable "vm_front_disk" {
+  description = "VM front disk"
+  type        = string
+  sensitive   = false
+}
+
+variable "vm_nexus" {
+  description = "VM nexus"
+  type        = string
+  sensitive   = false
+}
+variable "vm_nexus_disk" {
+  description = "VM nexus disk"
+  type        = string
+  sensitive   = false
+}
+
+variable "vm_obs" {
+  description = "VM observability"
+  type        = string
+  sensitive   = false
+}
+variable "vm_obs_disk" {
+  description = "VM observability disk"
+  type        = string
+  sensitive   = false
+}

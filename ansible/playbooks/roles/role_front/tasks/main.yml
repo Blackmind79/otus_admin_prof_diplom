@@ -1,0 +1,55 @@
+# --> Folders
+- name: "Create global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}" # same as user
+  loop: "{{ front_local_directories }}"
+# <-- Folders
+
+# --> Web-server
+- name: "Copy angie conf file"
+  ansible.builtin.template:
+    src: "{{ item }}.jinja"
+    dest: "{{ angie_path }}/{{ item }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+  loop:
+    - angie.conf
+    - prometheus_all.conf
+#    - geoip.conf    
+
+- name: "Copy compose file"
+  ansible.builtin.template:
+    src: "angie.yaml.jinja"
+    dest: "{{ angie_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+# copy http.d
+- name: "Copy conf file"
+  ansible.builtin.template:
+    src: "{{ item }}.jinja"
+    dest: "{{ angie_path_httpd }}/{{ item }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+  loop:
+    - antiddos.conf
+    - blacklist.conf
+    - default.conf
+    - cms.conf
+
+- name: "Stop and remove Angie containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ angie_path }}"
+    state: absent
+
+- name: "Start Angie containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ angie_path }}"
+    state: present
+# <-- Web-server

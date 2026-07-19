@@ -1,0 +1,12 @@
+# code: language=yaml
+---
+obs_path: "/opt/metrics"
+obs_config_alloy: "config.alloy"
+
+obs_server_proto: "http"
+obs_server_fqdn: "srv-obs.internal.net"
+obs_server_port: "9009"
+
+local_directories:
+  - "{{ obs_path }}"
+  - /mnt/docker_shared

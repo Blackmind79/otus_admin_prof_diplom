@@ -1,8 +1,32 @@
 # Networks
 # ---------------------------------------------------
 
+# --> NAT
+resource "yandex_vpc_gateway" "main-outgoing-nat" {
+  description = "NAT for outgoing requests"
+  folder_id   = var.folder_id
+  name        = "main-outgoing-nat"
+  shared_egress_gateway {
+  }
+}
+# <-- Nat
+
+# --> Route tables
+resource "yandex_vpc_route_table" "otus-routes" {
+  description = var.route_table_main
+  folder_id   = var.folder_id
+  name        = var.route_table_main
+  network_id  = var.ya_cloud_network_id 
+
+  static_route {
+    destination_prefix = "0.0.0.0/0"
+    gateway_id         = yandex_vpc_gateway.main-outgoing-nat.id
+  }
+}
+# <-- Route tables
+
 # --> Networks.Subnets
-resource "yandex_vpc_subnet" "subnet-database" {
+resource "yandex_vpc_subnet" "subnet-main" {
   folder_id      = var.folder_id
   name           = var.ya_cloud_subnet_main
   description    = "Main subnet"
@@ -15,6 +39,7 @@ resource "yandex_vpc_subnet" "subnet-database" {
   labels = {
     network-type = "main-network"
   }
+  route_table_id = yandex_vpc_route_table.otus-routes.id
 }
 # <-- Networks.Subnets
 
@@ -53,6 +78,44 @@ resource "yandex_dns_zone" "otus-internal" {
 # <-- DNS zone
 
 # --> Networks.Security groups
+resource "yandex_vpc_security_group" "sg-default" {
+  name        = "sg-default"
+  description = "Allow ICMP traffic and all outgoing"
+  network_id = var.ya_cloud_network_id
+
+  labels = {
+    sg-access-type = "sg-default"
+  }
+
+  # ICMP
+  ingress {
+    protocol    = "ICMP"
+    description = "ICMP traffic"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    protocol    = "ICMP"
+    description = "Allow all outgoing ICMP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+  # TCP
+  egress {
+    protocol       = "TCP"
+    description    = "Allow all outgoing TCP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    from_port      = 0
+    to_port        = 65535
+  }
+  # UDP
+  egress {
+    protocol       = "UDP"
+    description    = "Allow all outgoing UDP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    from_port      = 0
+    to_port        = 65535
+  }
+}
+
 resource "yandex_vpc_security_group" "sg-server-postgre-internal" {
   name        = "sg-server-postgre-internal"
   description = "internal communication between backend and PostgreSQL DB"
@@ -200,6 +263,123 @@ resource "yandex_vpc_security_group" "sg-front" {
       to_port        = egress.value
     }
   }
+}
+
+resource "yandex_vpc_security_group" "sg-nexus" {
+  name        = "sg-nexus"
+  description = "Allow all access to nexus server"
+  network_id  = var.ya_cloud_network_id
+
+  labels = {
+    sg-access-type = "sg-nexus"
+  }
+  # Incoming - only from ya.cloud subnets
+  # Outgoing - all nets (to create requests to hub.docker.com, etc)
+
+  ingress {
+    protocol       = "TCP"
+    description    = "(yc_subnets_prefix_list) 8081"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 8081
+  }
+  ingress {
+    protocol       = "TCP"
+    description    = "(yc_subnets_prefix_list) 5005"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 5005
+  }
+  ingress {
+    protocol       = "TCP"
+    description    = "(yc_subnets_prefix_list) 7000"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 7000
+  }
+
+  egress {
+    protocol       = "ANY"
+    description    = "ANY ports to output"
+    # v4_cidr_blocks = ["0.0.0.0/0"]
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    from_port      = 0
+    to_port        = 65535
+  }
+}
+
+resource "yandex_vpc_security_group" "sg-alloy" {
+  name        = "sg-alloy"
+  description = "internal access for grafana.alloy"
+  network_id  = var.ya_cloud_network_id
+  labels = {
+    sg-access-type = "sg-alloy"
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "(self) Alloy port 12345"
+    predefined_target = "self_security_group"
+    port              = 12345
+  }
+  egress {
+    protocol          = "TCP"
+    description       = "(self) Alloy port 12345"
+    predefined_target = "self_security_group"
+    port              = 12345
+  }
+}
+
+resource "yandex_vpc_security_group" "sg-obs-server" {
+  name        = "sg-obs-server"
+  description = "internal access for observability server"
+  network_id  = var.ya_cloud_network_id
+  labels = {
+    sg-access-type = "sg-obs-server"
+  }
+  # Ingress
+  ingress {
+    protocol          = "TCP"
+    description       = "Mimir http API port 9009"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 9009
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "Mimir grpc port 9095"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 9095
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "Grafana port 3000"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 3000
+  }
+
+  # Egress
+  egress {
+    protocol          = "ANY"
+    description       = "ANY ports in current network"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    from_port         = 0
+    to_port           = 65535
+  }
+  # egress {
+  #   protocol          = "TCP"
+  #   description       = "Mimir http API port 9009"
+  #   v4_cidr_blocks    = var.yc_subnets_prefix_list
+  #   port              = 9009
+  # }
+  # egress {
+  #   protocol          = "TCP"
+  #   description       = "Mimir grpc port 9095"
+  #   v4_cidr_blocks    = var.yc_subnets_prefix_list
+  #   port              = 9095
+  # }
+  # egress {
+  #   protocol          = "TCP"
+  #   description       = "Grafana port 3000"
+  #   v4_cidr_blocks    = var.yc_subnets_prefix_list
+  #   port              = 3000
+  # }
+
 }
 
 ## Default security group have ICMP access only
