@@ -118,21 +118,25 @@ resource "yandex_vpc_security_group" "sg-default" {
 
 resource "yandex_vpc_security_group" "sg-server-postgre-internal" {
   name        = "sg-server-postgre-internal"
-  description = "internal communication between backend and PostgreSQL DB"
+  description = "internal communication between with PostgreSQL DBs"
   network_id  = var.ya_cloud_network_id
   labels = {
     sg-access-type = "sg-server-postgre-internal"
   }
   ingress {
     protocol          = "TCP"
-    description       = "(self) PostgreSQL port 5432"
-    predefined_target = "self_security_group"
+#    description       = "(self) PostgreSQL port 5432"
+#    predefined_target = "self_security_group"
+    description       = "Internal PostgreSQL port 5432"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
     port              = 5432
   }
   egress {
     protocol          = "TCP"
-    description       = "(self) PostgreSQL port 5432"
-    predefined_target = "self_security_group"
+#    description       = "(self) PostgreSQL port 5432"
+#    predefined_target = "self_security_group"
+    description       = "Internal PostgreSQL port 5432"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
     port              = 5432
   }
 }
@@ -293,6 +297,12 @@ resource "yandex_vpc_security_group" "sg-nexus" {
     description    = "(yc_subnets_prefix_list) 7000"
     v4_cidr_blocks = var.yc_subnets_prefix_list
     port           = 7000
+  }
+  ingress {
+    protocol       = "TCP"
+    description    = "(yc_subnets_prefix_list) Databasus 4005"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 4005
   }
 
   egress {

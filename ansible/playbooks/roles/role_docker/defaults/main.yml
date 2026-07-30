@@ -10,3 +10,11 @@ obs_server_port: "9009"
 local_directories:
   - "{{ obs_path }}"
   - /mnt/docker_shared
+
+## --> Images
+## Images internal
+img_alloy: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/alloy:latest"
+
+## ...or Images Public
+# img_alloy: "grafana/alloy:latest"
+## <-- Images

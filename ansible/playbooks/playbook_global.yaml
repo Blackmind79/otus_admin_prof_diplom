@@ -1,5 +1,5 @@
 # code: language=ansible
-
+# playbooks/playbook_global.yaml
 ---
 
 - name: "Configuration [all VMs]. Docker install"
@@ -12,47 +12,3 @@
   roles:
     - role: role_docker
       when: ansible_facts["system"] | lower == "linux"
-
-# - name: "Configuration [all VMs]. Front"
-#   vars_files:
-#     - ../.vault.enc
-#   hosts:
-#     - front
-#   become: true
-#   gather_facts: true
-#   roles:
-#     - role: role_front
-#       when: ansible_facts["system"] | lower == "linux"
-
-# - name: "Configuration [front]"
-#   vars_files:
-#     - ../.vault.enc
-#   hosts:
-#     - front
-#   become: true
-#   gather_facts: true
-#   roles:
-#     - role: role_front
-#       when: ansible_facts["system"] | lower == "linux"
-
-# - name: "Configuration [postgresql]"
-#   vars_files:
-#     - ../.vault.enc
-#   hosts:
-#     - postgresql
-#   become: true
-#   gather_facts: true
-#   roles:
-#     - role: role_postgresql
-#       when: ansible_facts["system"] | lower == "linux"
-
-# - name: "Configuration [observability]"
-#   vars_files:
-#     - ../.vault.enc
-#   hosts:
-#     - obs
-#   become: true
-#   gather_facts: true
-#   roles:
-#     - role: role_obs
-#       when: ansible_facts["system"] | lower == "linux"

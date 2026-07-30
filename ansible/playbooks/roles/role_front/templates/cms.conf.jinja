@@ -3,6 +3,15 @@ map $http_upgrade $connection_upgrade {
   '' close;
 }
 
+upstream stream_cms {
+  # shared memory for zone
+  zone stream_cms 1m;
+
+  server drupal:80 resolve;
+
+  keepalive 32;
+}
+
 server {
   listen 443 quic;
   listen 443 ssl;
@@ -41,22 +50,22 @@ server {
     # используется для объявления о поддержке http/3
     add_header Alt-Svc 'h3=":443";max=86400';
 
-#    set $project http://stream_cms;
-#    proxy_pass $project;
-#    proxy_http_version 1.1;
-#    proxy_set_header Upgrade $http_upgrade;
-#    proxy_set_header Connection $connection_upgrade;
-#    proxy_set_header   Host $host;
-#    proxy_set_header   X-Real-IP $remote_addr;
-#    proxy_cache_bypass $http_upgrade;
-#    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-#    proxy_set_header   X-Forwarded-Proto $scheme;
+    set $project http://stream_cms;
+    proxy_pass $project;
+    proxy_http_version 1.1;
+    proxy_set_header   Upgrade $http_upgrade;
+    proxy_set_header   Connection $connection_upgrade;
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_cache_bypass $http_upgrade;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
 
-    default_type application/json;
-    return 200 '{"result": "success"}';
+#    default_type application/json;
+#    return 200 '{"result": "success"}';
   }
 
-  # status_zone yjb_zone;
+  status_zone zone_cms;
 
   # redirect server error pages to the static page /50x.html
   error_page   500 502 503 504  /50x.html;

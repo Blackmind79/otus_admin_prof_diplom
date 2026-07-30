@@ -1,6 +1,6 @@
 services:
   nexus:
-    image: sonatype/nexus3:latest
+    image: "{{ img_nexus }}"
     container_name: nexus
     ports:
       - "8081:8081" # GUI

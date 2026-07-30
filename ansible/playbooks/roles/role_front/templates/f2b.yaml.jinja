@@ -1,0 +1,32 @@
+services:
+  fail2ban:
+    image: "{{ img_f2b }}"
+    container_name: fail2ban
+    restart: unless-stopped
+    # Работа в сети хоста необходима для управления iptables
+    network_mode: "host"
+    # Ключевые возможности для управления сетью
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      # Конфиги
+      - f2b_data:/data
+      # Монтируем логи хоста для отслеживания SSH-атак
+      - /var/log:/var/log:ro
+      # Монтируем часовой пояс хоста
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      TZ: "Europe/Moscow"
+      F2B_LOG_TARGET: "STDOUT"
+      F2B_LOG_LEVEL: "INFO"
+      F2B_DB_PURGE_AGE: "1d"
+
+volumes:
+
+  f2b_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ f2b_data_path }}"

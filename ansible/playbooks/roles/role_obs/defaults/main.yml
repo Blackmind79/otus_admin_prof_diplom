@@ -22,3 +22,12 @@ obs_local_directories:
   - "{{ grafana_dashboards_path }}"
 
 
+## --> Images
+## Images internal
+img_mimir: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/mimir:latest"
+img_grafana: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/grafana:latest"
+
+## ...or Images Public
+# img_mimir: "grafana/mimir:latest"
+# img_grafana: "grafana/grafana:latest"
+## <-- Images

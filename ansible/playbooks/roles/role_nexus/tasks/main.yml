@@ -1,5 +1,5 @@
 # --> Folders
-- name: "Create global folders"
+- name: "Create nexus global folders"
   file:
     path: "{{ item }}"
     state: directory
@@ -13,6 +13,14 @@
     state: directory
     owner: 200
     group: "{{ global_remote_user }}"
+
+- name: "Create databasus global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+  loop: "{{ databasus_local_directories }}"
 # <-- Folders
 
 # --> Nexus-server
@@ -23,7 +31,19 @@
     owner: "{{ global_remote_user }}"
     group: "{{ global_remote_user }}"
     mode: "0644"
+# <-- Nexus-server
 
+# --> Databasus-server
+- name: "Copy databasus compose file"
+  ansible.builtin.template:
+    src: "databasus.yaml.jinja"
+    dest: "{{ databasus_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+# <-- Databasus-server
+
+# --> Restart docker
 - name: "Stop and remove nexus containers"
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_path }}"
@@ -33,4 +53,14 @@
   community.docker.docker_compose_v2:
     project_src: "{{ nexus_path }}"
     state: present
-# <-- Nexus-server
+
+- name: "Stop and remove databasus containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ databasus_path }}"
+    state: absent
+
+- name: "Start databasus containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ databasus_path }}"
+    state: present
+# <-- Restart docker

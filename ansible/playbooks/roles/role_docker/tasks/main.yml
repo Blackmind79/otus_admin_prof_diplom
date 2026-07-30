@@ -31,7 +31,7 @@
 
 
 # --> Docker
-- name: "Add Docker GPG apt Key"
+- name: "Add Docker GPG apt key"
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/trusted.gpg.d/docker.asc
@@ -75,6 +75,23 @@
     mode: "0644"
   register: register_copy_docker_daemon_json
   notify: "restart docker"
+
+## --> wait for restart docker
+- name: "Flush handlers to restart Docker immediately"
+  meta: flush_handlers
+
+- name: "Wait for Docker socket"
+  ansible.builtin.wait_for:
+    path: /var/run/docker.sock
+    state: present
+    timeout: 30
+## Another variant - restart immediately if daemon.json changed
+# - name: "Restart docker"
+#   ansible.builtin.systemd:
+#     name: docker
+#     state: restarted
+#   when: register_copy_docker_daemon_json.changed
+## <-- wait for restart docker
 
 - name: "Result of copying Docker's daemon.json"
   ansible.builtin.debug:

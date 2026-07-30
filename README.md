@@ -9,6 +9,9 @@
 Инструкции и полезные источники:
 
 - [Authentication thru service account](https://yandex.cloud/ru/docs/cli/operations/authentication/service-account)
+- [Sonatype Nexus Docs](https://help.sonatype.com/en/sonatype-nexus-repository.html)
+- [Sonatype Nexus dockerhub](https://hub.docker.com/r/sonatype/nexus3)
+- [Databasus](https://databasus.com/advanced-config)
 
 ## Yandex Terraform
 
@@ -196,4 +199,48 @@ yc resource-manager folder add-access-binding "${FOLDER_ID}" \
 
 # Генерация статического ключа доступа (запишите полученные key_id и secret например в файл .backend)
 yc iam access-key create --service-account-name "${SERVICE_ACCOUNT_NAME}"
+```
+
+## Разное
+
+### Fail2ban
+
+Документация: [Crazy-max Fail2ban](https://github.com/crazy-max/docker-fail2ban).
+
+Контейнер, поднятый на VM с обратным прокси для контроля попыток входа из сети интернет.
+В базовом варианте настроено на бан попыток подбора входа по ssh.
+Можно настроить на любой порт, если есть логи о попытке подключения.
+
+Проверка работы:
+
+```bash
+docker exec -it fail2ban fail2ban-client status
+docker exec -it fail2ban fail2ban-client status --all
+```
+
+В поле `Jail list` будут отображены все ваши сконфигурированные "тюрьмы".
+
+Забаненные IP:
+
+```bash
+docker exec -it fail2ban fail2ban-client banned
+```
+
+Забанить IP вручную ибо задолбал(`JAIL` - название "тюрьмы", `IP` - ip-адрес для блокировки):
+
+```bash
+docker exec -it fail2ban fail2ban-client set <JAIL> banip <IP>
+```
+
+Посмотреть конкретную "тюрьму" (в примере sshd):
+
+```bash
+docker exec -it fail2ban fail2ban-client status sshd
+```
+
+Разбанить IP-адреса
+
+```bash
+# один IP в указанной тюрьме
+docker exec -it fail2ban fail2ban-client set <JAIL> unbanip <IP>
 ```

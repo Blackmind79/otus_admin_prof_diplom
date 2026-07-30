@@ -9,6 +9,14 @@
 # <-- Folders
 
 # --> OBS-server
+- name: "Copy .env file"
+  ansible.builtin.template:
+    src: "dotenv.jinja"
+    dest: "{{ obs_path }}/.env"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0600"
+
 - name: "Copy compose file"
   ansible.builtin.template:
     src: "obs.yaml.jinja"
@@ -60,11 +68,6 @@
     group: "{{ global_remote_user }}"
     mode: "0644"
 ## <-- Alerting
-
-
-
-
-
 
 # grafana/provisioning/datasources/datasource.yaml
 - name: "Copy grafana datasource file"

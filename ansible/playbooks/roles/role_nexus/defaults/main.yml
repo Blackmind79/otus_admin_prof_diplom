@@ -6,3 +6,18 @@ nexus_data_path: "{{ nexus_path }}/data"
 nexus_local_directories:
   - "{{ nexus_path }}"
 
+databasus_path: "/opt/databasus"
+databasus_data_path: "{{ databasus_path }}/data"
+
+databasus_local_directories:
+  - "{{ databasus_path }}"
+  - "{{ databasus_data_path }}"
+
+## --> Images
+## Images internal
+img_databasus: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/databasus:latest"
+
+## ...or Images Public
+img_nexus: "sonatype/nexus3:latest"
+# img_databasus: "databasus/databasus:latest"
+## <-- Images

@@ -1,6 +1,6 @@
 services:
   angie:
-    image: docker.angie.software/angie:latest
+    image: "{{ img_angie }}"
     container_name: "angie"
     restart: always
     extra_hosts:
@@ -22,7 +22,7 @@ services:
       - angie_certs:/var/lib/angie/acme
       - geoip:/usr/share/geoip
     networks:
-      frontend:
+      {{ docker.networks.net01 }}:
     deploy:
       resources:
         limits:
@@ -33,8 +33,7 @@ services:
           memory: 256M
 
 networks:
-
-  frontend:
+  {{ docker.networks.net01 }}:
     external: true
 
 volumes:
@@ -45,7 +44,7 @@ volumes:
     driver_opts:
       type: "none"
       o: "bind"
-      device: "{{ angie_path }}/data/geoip"
+      device: "{{ angie_path_data_geoip }}"
 
   # angie volumes
 
@@ -54,27 +53,28 @@ volumes:
     driver_opts:
       type: "none"
       o: "bind"
-      device: "{{ angie_path }}/data/data"
+      device: "{{ angie_path_data_data }}"
 
   angie_logs:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "{{ angie_path }}/data/logs"
+      device: "{{ angie_path_data_logs }}"
+
   angie_configs:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "{{ angie_path }}/data/http.d"
+      device: "{{ angie_path_data_httpd }}"
 
   angie_streams:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "{{ angie_path }}/data/stream.d"
+      device: "{{ angie_path_data_streamd }}"
 
   # shared certs
   angie_certs:

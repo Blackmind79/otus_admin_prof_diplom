@@ -1,14 +1,30 @@
 # --> Folders
-- name: "Create global folders"
+- name: "Create Angie global folders"
   file:
     path: "{{ item }}"
     state: directory
     owner: "{{ global_remote_user }}"
-    group: "{{ global_remote_user }}" # same as user
-  loop: "{{ front_local_directories }}"
+    group: "{{ global_remote_user }}"
+  loop: "{{ angie_local_directories }}"
+
+- name: "Create Fail2ban global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+  loop: "{{ f2b_local_directories }}"
+
+- name: "Create Drupal global folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+  loop: "{{ drupal_local_directories }}"
 # <-- Folders
 
-# --> Web-server
+# --> Reverse proxy web-server
 - name: "Copy angie conf file"
   ansible.builtin.template:
     src: "{{ item }}.jinja"
@@ -33,7 +49,7 @@
 - name: "Copy conf file"
   ansible.builtin.template:
     src: "{{ item }}.jinja"
-    dest: "{{ angie_path_httpd }}/{{ item }}"
+    dest: "{{ angie_path_data_httpd }}/{{ item }}"
     owner: "{{ global_remote_user }}"
     group: "{{ global_remote_user }}"
     mode: "0644"
@@ -42,6 +58,22 @@
     - blacklist.conf
     - default.conf
     - cms.conf
+
+# создаем постоянную сеть, так как прокси и cms будут ее использовать одновременно
+# можно добавить несколько подсетей, если хотите изолировать сервисы на этой VM
+# но нужно будет их добавить в контейнер angie(reverse proxy), чтобы мог перенаправить запросы
+- name: "Создать сеть docker"
+  community.docker.docker_network:
+    name: "{{ docker.networks.net01 }}"
+    driver: bridge                          # Драйвер сети (по умолчанию bridge)
+    # ipam_config:                            # Настройка IPAM (управление IP-адресами)
+    #   - subnet: 172.18.0.0/16               # Подсеть для сети
+    #     gateway: 172.18.0.1                 # Шлюз
+    #     iprange: 172.18.0.0/24              # Диапазон IP для контейнеров
+    labels:                                 # Метки для сети
+      environment: production
+      project: front
+    state: present
 
 - name: "Stop and remove Angie containers"
   community.docker.docker_compose_v2:
@@ -52,4 +84,76 @@
   community.docker.docker_compose_v2:
     project_src: "{{ angie_path }}"
     state: present
-# <-- Web-server
+# <-- Reverse proxy Web-server
+
+# --> Fail2ban
+- name: "Copy compose file"
+  ansible.builtin.template:
+    src: "f2b.yaml.jinja"
+    dest: "{{ f2b_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy jail file [sshd]"
+  ansible.builtin.template:
+    src: "f2b.sshd.conf.jinja"
+    dest: "{{ f2b_jail_path }}/sshd.conf"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy jail file [defaults]"
+  ansible.builtin.template:
+    src: "f2b.defaults.conf.jinja"
+    dest: "{{ f2b_jail_path }}/defaults.conf"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Stop and remove fail2ban containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ f2b_path }}"
+    state: absent
+
+- name: "Start fail2ban containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ f2b_path }}"
+    state: present
+# <-- Fail2ban
+
+# --> Drupal
+- name: "Copy drupal entrypoint file"
+  copy:
+    src: "entrypoint.sh"
+    dest: "{{ drupal_path }}/entrypoint.sh"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0700"
+
+- name: "Copy Drupal compose file"
+  ansible.builtin.template:
+    src: "drupal.yaml.jinja"
+    dest: "{{ drupal_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+
+- name: "Copy Drupal dotenv file"
+  ansible.builtin.template:
+    src: "drupal.dotenv.jinja"
+    dest: "{{ drupal_path }}/.env"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0600"
+
+- name: "Stop and remove Drupal containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ drupal_path }}"
+    state: absent
+
+- name: "Start Drupal containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ drupal_path }}"
+    state: present
+# <-- Drupal

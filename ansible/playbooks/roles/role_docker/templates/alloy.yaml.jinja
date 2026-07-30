@@ -1,6 +1,6 @@
 services:
   alloy:
-    image: "grafana/alloy:latest"
+    image: "{{ img_alloy }}"
     container_name: alloy
     restart: unless-stopped
     network_mode: host

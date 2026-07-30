@@ -1,0 +1,33 @@
+services:
+
+  databasus:
+    restart: unless-stopped
+    image: "{{ img_databasus }}"
+    container_name: databasus
+    ports:
+      - "4005:4005"
+    environment:
+      IS_DISABLE_ANONYMOUS_TELEMETRY: true
+    volumes:
+      - 'databasus_data:/databasus-data'
+    healthcheck:
+      test: ["CMD", "wget","--no-verbose","--tries=3","--spider","http://0.0.0.0:4005/api/v1/system/health || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+      start_interval: 5s
+    networks:
+      {{ docker.networks.net01 }}:
+
+networks:
+  {{ docker.networks.net01 }}:
+
+volumes:
+
+  databasus_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ databasus_data_path }}"

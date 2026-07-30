@@ -161,3 +161,23 @@ variable "vm_obs_disk" {
   type        = string
   sensitive   = false
 }
+variable "vm_pg" {
+  description = "VM Postgres Master"
+  type        = string
+  sensitive   = false
+}
+variable "vm_pg_disk" {
+  description = "VM Postgres Master disk"
+  type        = string
+  sensitive   = false
+}
+variable "vm_pg_replica" {
+  description = "VM Postgres Replica"
+  type        = string
+  sensitive   = false
+}
+variable "vm_pg_replica_disk" {
+  description = "VM Postgres Replica disk"
+  type        = string
+  sensitive   = false
+}

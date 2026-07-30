@@ -1,0 +1,27 @@
+---
+
+# Postgres packages ver 18 (https://www.postgresql.org/download/linux/ubuntu/)
+
+pg_version: '18'
+pg_packages:
+  - "postgresql-{{ pg_version }}"
+  - "postgresql-client-{{ pg_version }}"
+  - "postgresql-doc-{{ pg_version }}"
+  # - "python3-psycopg2"           # to use community.postgresql.postgresql_user
+
+firewall_packages:
+  - ufw
+
+# Postgres tuning
+pg_def_cluster_config_path: "/etc/postgresql/{{ pg_version }}/main"
+pg_def_cluster_confd_path: "{{ pg_def_cluster_config_path }}/conf.d"
+pg_def_data_path: "/var/lib/postgresql/{{ pg_version }}/main"
+
+pg_wal_compression: "lz4"
+pg_shared_buffers: "{{ ((ansible_facts.memtotal_mb | default(1024)) // 4) }}MB"
+
+pg_wal_level: "replica"
+pg_max_wal_senders: '10'         # Количество одновременных подключений реплик
+pg_max_replication_slots: '10'   # Количество слотов для репликации
+pg_wal_keep_size: '128MB'        # Объем WAL для хранения на случай отставания реплики
+pg_hot_standby: 'on'             # "off" disallows queries during recovery

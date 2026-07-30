@@ -1,13 +1,13 @@
 # code: language=yaml
-# playbooks/playbook_obs.yaml
+# playbooks/playbook_pg.yaml
 ---
-- name: "Configuration [obs]"
+- name: "Configuration [postgres DBs]"
   vars_files:
     - ../.vault.enc
   hosts:
-    - obs
+    - databases
   become: true
   gather_facts: true
   roles:
-    - role: role_obs
+    - role: role_pg
       when: ansible_facts["system"] | lower == "linux"

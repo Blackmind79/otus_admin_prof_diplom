@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: "{{ img_postgres }}"
+    restart: always
+    container_name: postgres
+    networks:
+       {{ docker.networks.net01 }}:
+    environment:
+      # https://hub.docker.com/_/postgres
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      # POSTGRES_INITDB_ARGS: "${POSTGRES_INITDB_ARGS}"
+      ## Default folder for PGDATA is /var/lib/postgresql/18/docker
+      # PGDATA: "${PGDATA}"
+    volumes:
+      # PGDATA: /var/lib/postgresql/{{ .major | tostring }}/docker
+      - db_storage:/var/lib/postgresql
+    healthcheck:
+      # test: ["CMD-SHELL", "pg_isready  -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+   {{ docker.networks.net01 }}:
+
+volumes:
+
+  db_storage:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ pg_data_path }}"

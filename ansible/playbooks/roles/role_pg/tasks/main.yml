@@ -1,0 +1,343 @@
+# code: language=ansible
+---
+# --> install pg repo
+- name: "Add PostgreSQL GPG apt key"
+  ansible.builtin.get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: /etc/apt/trusted.gpg.d/apt.postgresql.org.asc
+    #-rw-r--r--
+    mode: '0644'
+    force: true
+
+- name: "Add PostgreSQL repository"
+  ansible.builtin.deb822_repository:
+    name: postgres
+    types: [deb,deb-src]
+    uris: "https://apt.postgresql.org/pub/repos/apt"
+    suites: "{{ ansible_facts.distribution_release | lower }}-pgdg"
+    components: [main]
+    architectures: [amd64]
+    signed_by: "/etc/apt/trusted.gpg.d/apt.postgresql.org.asc"
+    state: present
+    enabled: yes
+# <-- install pg repo
+
+# --> Install required packages
+- name: "Install required packages"
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+    autoremove: yes
+    autoclean: yes
+  become: true
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 3
+  delay: 10
+  loop: "{{ pg_packages }}"
+# <-- Install required packages
+
+# --> Set vm.swappiness = 10
+- name: "Set vm.swappiness = 10"
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: '10'
+    state: present
+    reload: true              # Применить настройку сразу (sysctl -p)
+    sysctl_set: true          # Установить значение в текущей сессии
+    sysctl_file: "/etc/sysctl.d/98-swappiness.conf"
+# <-- Set vm.swappiness = 10
+
+# --> create postgres cluster
+- name: "Check cluster config"
+  ansible.builtin.stat:
+    path: "{{ pg_def_cluster_config_path }}/postgresql.conf"
+  register: pg_conf
+
+- name: "Create PostgreSQL cluster"
+  ansible.builtin.command:
+    argv:
+      - pg_createcluster
+      - "{{ pg_version }}"
+      - main
+  when: not pg_conf.stat.exists
+  register: pg_cluster_created
+
+- name: "Show is cluster created"
+  ansible.builtin.debug:
+    var: pg_cluster_created
+  
+- name: "Check cluster data"
+  ansible.builtin.stat:
+    path: "{{ pg_def_data_path }}/PG_VERSION"
+  register: pg_data
+
+- block:
+  - name: "Enable PostgreSQL cluster"
+    ansible.builtin.systemd:
+      name: "postgresql@{{ pg_version }}-main"
+      enabled: true
+      state: started
+
+  - name: "Wait PostgreSQL ready"
+    become: true
+    become_user: postgres
+    ansible.builtin.command:
+      argv:
+        - pg_isready
+    register: pg_ready
+    retries: 10
+    delay: 3
+    until: pg_ready.rc == 0
+
+  when: pg_data.stat.exists
+# <-- create postgres cluster
+
+# --> set postgres creds on primary
+- block:
+  - name: "Set postgres password"
+    become: true
+    ansible.builtin.command:
+      argv:
+        - sudo
+        - -u
+        - "{{ postgresql_user }}"
+        - psql
+        - -c
+        - "ALTER USER {{ postgresql_user }} WITH PASSWORD '{{ postgresql_password }}';"
+    # no_log: true
+    when: pg_data.stat.exists
+
+  - name: "Create user for replication and set password at Primary"
+    become: true
+    ansible.builtin.command:
+      argv:
+        - sudo
+        - -u
+        - "{{ postgresql_user }}"
+        - psql
+        - -c
+        - |
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{{ postgresql_replication_user }}') THEN
+              CREATE ROLE {{ postgresql_replication_user }} WITH LOGIN REPLICATION PASSWORD '{{ postgresql_replication_password }}';
+            END IF;
+          END
+          $$;
+    # no_log: true
+  when: pgtype == "primary"
+# <-- set postgres creds on primary
+
+# --> Copy postgres  files
+## PGTYPE is a var (in ansible/hosts)
+## primary_host, primary_port - for postgres replica (in ansible/hosts)
+- block:
+    - name: "Copy PG primary config"
+      ansible.builtin.template:
+        src: "primary.postgres.conf.jinja"
+        # add file to .../conf.d
+        dest: "{{ pg_def_cluster_confd_path }}/replication.conf"
+        owner: postgres
+        group: postgres
+        mode: '0644'
+
+    - name: "Copy PG primary hba"
+      ansible.builtin.template:
+        src: "primary.pg_hba.conf.jinja"
+        dest: "{{ pg_def_cluster_config_path }}/pg_hba.conf"
+        owner: postgres
+        group: postgres
+        mode: '0644'
+  when: pgtype == "primary"
+
+- block:
+    - name: "Stop PostgreSQL standby cluster"
+      become: true
+      ansible.builtin.systemd:
+        name: "postgresql@{{ pg_version }}-main"
+        state: stopped
+
+    - name: "Check standby data directory"
+      become: true
+      ansible.builtin.stat:
+        path: "{{ pg_def_data_path }}"
+      register: standby_data
+
+    - name: "Check standby OLD data directory"
+      become: true
+      ansible.builtin.stat:
+        path: "{{ pg_def_data_path }}_old"
+      register: standby_data_old
+
+    - name: "Clean standby OLD data directory if data exists"
+      become: true
+      ansible.builtin.file:
+        path: "{{ pg_def_data_path }}"
+        state: absent
+      when: standby_data_old.stat.exists and not standby_data.stat.exists 
+
+    - name: "Move old PGDATA folder"
+      ansible.builtin.command:
+        cmd: "mv {{ pg_def_data_path }} {{ pg_def_data_path }}_old"
+      become: true
+      when: standby_data.stat.exists
+
+    - name: "Clean standby data directory"
+      become: true
+      ansible.builtin.file:
+        path: "{{ pg_def_data_path }}"
+        state: absent
+      when: standby_data.stat.exists
+
+    - name: "Create standby data directory"
+      become: true
+      ansible.builtin.file:
+        path: "{{ pg_def_data_path }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+
+    # To avoids interactive password prompts during backup:
+    # hostname:port:database:username:password
+    - name: "Create .pgpass"
+      ansible.builtin.template:
+        src: "standby.pgpass.jinja"
+        dest: "{{ pg_def_cluster_config_path }}/.pgpass"
+        owner: postgres
+        group: postgres
+        mode: '0600'
+
+    - name: "Create base backup from primary"
+      become: true
+      # -R → automatically creates a standby.signal file for recovery mode
+      # -C and -S → create replication slot on primary for this standby
+      ansible.builtin.shell:
+        cmd: |
+          sudo -u {{ postgresql_user }} bash -c "
+            export PGPASSFILE={{ pg_def_cluster_config_path }}/.pgpass; \
+            pg_basebackup -h {{ primary_host }} -p {{ primary_port }} \
+              -D {{ pg_def_data_path }} -U {{ postgresql_replication_user }} \
+              -P -v -R -C -S standby_slot_{{ inventory_hostname }}
+          "
+      register: pg_base_backup
+
+    - name: "Show base backup info"
+      ansible.builtin.debug:
+        var: pg_base_backup
+
+    - name: "Set ownership of standby data directory"
+      become: true
+      ansible.builtin.file:
+        path: "{{ pg_def_data_path }}"
+        owner: postgres
+        group: postgres
+        recurse: true
+
+    # - name: "Copy PG standby config"
+    #   ansible.builtin.template:
+    #     src: "standby.postgres.conf.jinja"
+    #     dest: "{{ pg_def_cluster_confd_path }}/standby.conf"
+    #     owner: postgres
+    #     group: postgres
+    #     mode: '0644'
+
+    # - name: "Copy PG standby hba"
+    #   ansible.builtin.template:
+    #     src: "standby.pg_hba.conf.jinja"
+    #     dest: "{{ pg_def_cluster_config_path }}/pg_hba.conf"
+    #     owner: postgres
+    #     group: postgres
+    #     mode: '0644'
+
+    # - name: "Start PostgreSQL standby cluster"
+    #   become: true
+    #   ansible.builtin.systemd:
+    #     name: "postgresql@{{ pg_version }}-main"
+    #     state: started
+    #     enabled: true
+  when: pgtype == "standby"
+
+- name: "Restart PG after add configs"
+  ansible.builtin.service:
+    name: "postgresql@{{ pg_version }}-main"
+    state: restarted
+  when: pgtype in ["primary", "standby"]
+# <-- Copy postgres  files
+
+# --> check replica
+- block:
+    - name: "Check standby recovery state"
+      become: true
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - -u
+          - "{{ postgresql_user }}"
+          - psql
+          - -tAc
+          - "SELECT pg_is_in_recovery();"
+      register: recovery_state
+
+    - name: "Show recovery state"
+      ansible.builtin.debug:
+        var: recovery_state.stdout
+  when: pgtype == "standby"
+# <-- check replica
+
+# --> Setup UFW for postgres
+- name: "Install required packages"
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+    autoremove: yes
+    autoclean: yes
+  become: true
+  register: apt_ufw_result
+  until: apt_ufw_result is succeeded
+  retries: 3
+  delay: 10
+  loop: "{{ firewall_packages }}"
+
+# Check UFW if run already
+- name: "Check ufw status"
+  become: true
+  ansible.builtin.command: "ufw status"
+  register: ufw_status
+  changed_when: false
+  failed_when: false
+
+- name: "Show current UFW status"
+  debug:
+    msg: "Current UFW status: {{ ufw_status.stdout }}"
+
+- name: "Drop rules if UFW work already"
+  ufw:
+    state: reset
+  when: "'Status: active' in ufw_status.stdout"
+
+- name: "Allow SSH (limit)"
+  ufw:
+    rule: limit
+    port: ssh
+    proto: tcp
+    # src: '10.130.0.0/24'
+
+- name: "Allow PostgreSQL 5432"
+  ufw:
+    rule: allow
+    port: '5432'
+    proto: tcp
+    # src: '10.130.0.0/24'
+
+- name: "Enable UFW with incoming policy DENY"
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+# --> Setup UFW for postgres

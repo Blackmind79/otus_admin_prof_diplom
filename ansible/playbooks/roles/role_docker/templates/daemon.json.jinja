@@ -1,4 +1,11 @@
 {
+{% if docker.insecure_registries is defined %}
+  "insecure-registries" : [
+{% for key, value in docker.insecure_registries.items() %}
+    "{{value.host}}:{{value.port}}"{%if not loop.last %},{% endif %}
+{% endfor %}
+  ],
+{% endif %}  
   "features": {
     "buildkit": true
   },

@@ -1,14 +1,56 @@
 # code: language=yaml
 ---
-angie_path: "/opt/angie"
-angie_path_httpd: "{{ angie_path }}/data/http.d"
-angie_certs_folder: "/opt/certs"
 
-front_local_directories:
+## Reverse proxy based on Angie
+angie_path: "/opt/angie"
+angie_certs_folder: "/opt/certs"
+angie_path_data_data: "{{ angie_path }}/data/data"
+angie_path_data_geoip: "{{ angie_path }}/data/geoip"
+angie_path_data_logs: "{{ angie_path }}/data/logs"
+angie_path_data_streamd: "{{ angie_path }}/data/stream.d"
+angie_path_data_httpd: "{{ angie_path }}/data/http.d"
+
+angie_local_directories:
   - "{{ angie_certs_folder }}"
   - "{{ angie_path }}"
-  - "{{ angie_path }}/data/geoip"
-  - "{{ angie_path }}/data/data"
-  - "{{ angie_path }}/data/logs"
-  - "{{ angie_path }}/data/stream.d"
-  - "{{ angie_path_httpd }}"
+  - "{{ angie_path_data_data }}"
+  - "{{ angie_path_data_geoip }}"
+  - "{{ angie_path_data_logs }}"
+  - "{{ angie_path_data_streamd }}"
+  - "{{ angie_path_data_httpd }}"
+
+## Fail2ban
+f2b_path: "/opt/fail2ban"
+f2b_data_path: "{{ f2b_path }}/data"
+f2b_jail_path: "{{ f2b_data_path }}/jail.d"
+
+f2b_local_directories:
+  - "{{ f2b_path }}"
+  - "{{ f2b_data_path }}"
+  - "{{ f2b_data_path }}/db"
+  - "{{ f2b_data_path }}/action.d"
+  - "{{ f2b_data_path }}/filter.d"
+  - "{{ f2b_jail_path }}"
+
+# drupal
+drupal_path: "/opt/drupal"
+drupal_data_path: "{{ drupal_path }}/data"
+drupal_data_data_path: "{{ drupal_data_path }}/data"
+drupal_data_web_path: "{{ drupal_data_path }}/web"
+
+drupal_local_directories:
+  - "{{ drupal_path }}"
+  - "{{ drupal_data_path }}"
+  - "{{ drupal_data_data_path }}"
+  - "{{ drupal_data_web_path }}"
+
+## --> Images
+## Images internal
+img_angie: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/angie:latest"
+img_f2b: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/fail2ban:latest"
+img_drupal: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/drupal:11-apache-trixie"
+## ...or Images Public
+# img_angie: "docker.angie.software/angie:latest"
+# img_f2b: "crazymax/fail2ban:latest"
+# img_drupal: "drupal:11-apache-trixie"
+## <-- Images

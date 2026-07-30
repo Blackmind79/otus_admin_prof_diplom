@@ -1,6 +1,6 @@
 services:
   mimir:
-    image: grafana/mimir:latest
+    image: "{{ img_mimir }}"
     container_name: mimir
     command:
       - "-config.file=/etc/mimir/config.yaml"
@@ -14,15 +14,15 @@ services:
       {{ docker.networks.net01 }}:
 
   grafana:
-    image: grafana/grafana:latest
+    image: "{{ img_grafana }}"
     container_name: grafana
     depends_on:
       - mimir
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: "{{ app_admin }}"
-      GF_SECURITY_ADMIN_PASSWORD: "{{ app_password }}"
+      GF_SECURITY_ADMIN_USER: "${GF_SECURITY_ADMIN_USER}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GF_SECURITY_ADMIN_PASSWORD}"
     volumes:
       - "{{ obs_path }}/grafana.ini:/etc/grafana/grafana.ini"
       - grafana_data:/var/lib/grafana
