@@ -12,6 +12,15 @@ ansible_ssh_private_key_file: "{{ global_general_sshkey }}"
 owner: "{{ global_owner }}"
 email: "{{ global_email }}"
 
+# S3 (if you wold use RCLONE to S3 for drupal backup)
+# Comment in playbook_front/tasks/main.yml and .../drupal.backup.jinja the S3 copy if you don't need it
+s3_access_key_id: "{{ s3_access_key_id }}"
+s3_secret_access_key: "{{ s3_secret_access_key }}"
+s3_endpoint: "{{ s3_endpoint }}"
+s3_region: "{{ s3_region }}"
+s3_rclone_config_name: "{{ s3_rclone_config_name }}"
+s3_bucket_name: "{{ s3-drupal }}"
+
 # Postgres
 postgresql_user: "{{ postgresql_user }}"
 postgresql_password: "{{ postgresql_password }}"
@@ -38,6 +47,10 @@ docker_packages:
   - docker-buildx-plugin
   - docker-compose-plugin
 
+# RClone
+rclone_packages:
+  - rclone
+
 # docker
 docker:
   insecure_registries:
@@ -49,3 +62,17 @@ docker:
     #   port: "5000"
   networks:
     net01: "frontend"
+
+## NFS server
+nfs_server_packages:
+  - nfs-kernel-server
+
+nfs_client_packages:
+  - nfs-common
+
+nfs_global_server: "srv-nexus.internal.net"
+nfs_global_share: "/srv/nfs/backup"
+nfs_global_version: "4.2"  # Or use: "4" or "4.1"
+
+nfs_client_mount_point: "/mnt/remote_backup"
+nfs_client_cidr: "10.130.0.0/24"

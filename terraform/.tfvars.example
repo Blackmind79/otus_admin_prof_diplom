@@ -1,0 +1,54 @@
+# Init connection to cloud using YC
+# --------------------------------------------
+
+#export YC_TOKEN=$(yc iam create-token)
+token = "ваш токен"
+
+# yc organization-manager organization list
+organization_id = "ID организации"
+
+cloud_name = "имя облака"
+cloud_id   = "его ID"
+
+folder_name = "имя каталога"
+folder_id   = "его ID"
+
+region = "ru-central1"
+zone   = "ru-central1-d"
+
+# Networks
+# --------------------------------------------
+# Сеть можно создать через terraform. Но так как есть особенности с ее созданием, сеть создана вручную.
+ya_cloud_network    = "otus-main-net"
+ya_cloud_network_id = "его ID"
+
+ya_cloud_subnet_main   = "название субсети" # 10.130.0.0/24
+ya_cloud_subnet_cidr   = "10.130.0.0/24"
+
+yc_subnets_prefix_list = [ "10.130.0.0/24" ] # ["10.130.0.0/24", "192.168.254.0/24"]
+
+# Reserved external IP
+# --------------------------------------------
+reserved_external_ip = [
+  { name = "ip_001_web", value = "ваш белый адрес" }
+]
+
+# Route tables
+route_table_main      = "otus-routes"
+
+# Disks
+# ID диска с Ubutnu26.04 в каталоге yandex
+ubuntu2604_image_id   = "fd8u10mhsprdmr9rotp4"
+
+# VMs
+# Ниже создаю название VM и их диски, чтобы зафиксировать их
+vm_front              = "srv-front-001"
+vm_front_disk         = "disk-ubuntu-26-04-lts-vanilla-1784219361649"
+vm_nexus              = "srv-nexus"
+vm_nexus_disk         = "disk-ubuntu-26-04-lts-vanilla-1784290109144"
+vm_obs                = "srv-obs"
+vm_obs_disk           = "disk-ubuntu-26-04-lts-vanilla-1784460430728"
+vm_pg                 = "srv-pg"
+vm_pg_disk            = "disk-ubuntu-26-04-lts-vanilla-1784569293463"
+vm_pg_replica         = "srv-pg-replica"
+vm_pg_replica_disk    = "disk-ubuntu-26-04-lts-vanilla-1784570205133"

@@ -2,7 +2,7 @@ services:
 
   drupal:
     image: "{{ img_drupal }}"
-    container_name: portfolio-cms
+    container_name: "${DRUPAL_SITE_NAME}"
     restart: unless-stopped
     expose:
       - "80"
@@ -21,8 +21,10 @@ services:
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
     volumes:
       - './entrypoint.sh:/usr/local/bin/entrypoint.sh'
-      - cms_web:/var/www/html
-      - cms_data:/opt/drupal
+      # /var/www/html -> /opt/drupal/web
+      - "cms_web:/var/www/html"
+      - "cms_data:/opt/drupal"
+      - "cms_backup:{{ drupal_container_backup_folder }}"
     networks:
       {{ docker.networks.net01 }}:
 
@@ -45,3 +47,10 @@ volumes:
       type: "none"
       o: "bind"
       device: "{{ drupal_data_web_path }}"
+
+  cms_backup:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "{{ drupal_data_backup_path }}"

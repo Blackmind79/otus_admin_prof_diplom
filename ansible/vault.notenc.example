@@ -1,0 +1,37 @@
+#==========================================================================================
+#Stored passwords.
+#use command below to encrypt data
+#> ansible-vault encrypt .vault.notenc --output .vault.enc --vault-password-file .vault.pwd
+#==========================================================================================
+
+# GLOBAL DESCRIPTION
+global_owner: maxim
+global_email: my-super-email@yandex.ru
+
+# GLOBAL KEYS
+global_remote_user             : ansible
+global_ansible_become_password : 12345
+global_general_sshkey          : ~/.ssh/mykey
+
+# POSTGRESQL
+postgresql_user: postgres
+postgresql_password: 7777777
+postgresql_replication_user: replicator
+postgresql_replication_password: 888888888
+
+# Application admin account
+app_admin: admin
+app_password: 123456
+
+# SMTP
+smtp_host: smtp.yandex.ru:465
+smtp_user: my-super-email@yandex.ru
+smtp_password: 123451234512345
+
+# S3 Backup bucket
+s3_access_key_id: YCAJ********ZP
+s3_secret_access_key: YCO**************************v05
+s3_endpoint: storage.yandexcloud.net
+s3_region: ru-central1
+s3_rclone_config_name: yandex-storage
+s3_bucket_name: s3-drupal

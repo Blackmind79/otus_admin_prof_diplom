@@ -32,17 +32,23 @@ f2b_local_directories:
   - "{{ f2b_data_path }}/filter.d"
   - "{{ f2b_jail_path }}"
 
-# drupal
+## Drupal
+drupal_site_name: "portfolio"
+drupal_container_backup_folder: "/mnt/backup"
 drupal_path: "/opt/drupal"
 drupal_data_path: "{{ drupal_path }}/data"
 drupal_data_data_path: "{{ drupal_data_path }}/data"
 drupal_data_web_path: "{{ drupal_data_path }}/web"
+drupal_data_backup_path: "{{ drupal_data_path }}/backup"
+# root scripts
+drupal_scripts: "/root/scripts"
 
 drupal_local_directories:
   - "{{ drupal_path }}"
   - "{{ drupal_data_path }}"
   - "{{ drupal_data_data_path }}"
   - "{{ drupal_data_web_path }}"
+  - "{{ drupal_data_backup_path }}"
 
 ## --> Images
 ## Images internal

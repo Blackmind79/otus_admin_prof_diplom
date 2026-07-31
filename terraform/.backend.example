@@ -1,0 +1,3 @@
+# S3 backend tokens
+access_key = "ваш статический ключ для S3"
+secret_key = "сам секрет"

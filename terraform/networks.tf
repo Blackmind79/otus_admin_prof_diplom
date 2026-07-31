@@ -315,6 +315,101 @@ resource "yandex_vpc_security_group" "sg-nexus" {
   }
 }
 
+resource "yandex_vpc_security_group" "sg-nfs-server" {
+  name        = "sg-nfs-server"
+  description = "Allow all access to NFS server"
+  network_id  = var.ya_cloud_network_id
+
+  labels = {
+    sg-access-type = "sg-nfs-server"
+  }
+  # Incoming - local subnet
+  # Outgoing - local subnet
+  ## --> portmapper
+  ingress {
+    protocol       = "TCP"
+    description    = "(TCP/portmapper) 111"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 111
+  }
+  ingress {
+    protocol       = "UDP"
+    description    = "(UDP/portmapper) 111"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 111
+  }
+  ## <-- portmapper
+
+  ## --> nfs
+  ingress {
+    protocol       = "TCP"
+    description    = "(TCP/nfs) 2049"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 2049
+  }
+  ingress {
+    protocol       = "UDP"
+    description    = "(UDP/nfs) 2049"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 2049
+  }
+  ## <-- nfs
+
+  ## --> mountd
+  ingress {
+    protocol       = "TCP"
+    description    = "(TCP/mountd) 20048"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 20048
+  }
+  ingress {
+    protocol       = "UDP"
+    description    = "(UDP/mountd) 20048"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 20048
+  }
+  ## <-- mountd
+  ## --> statd
+  ingress {
+    protocol       = "TCP"
+    description    = "(TCP/mountd) 32765"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 32765
+  }
+  ingress {
+    protocol       = "UDP"
+    description    = "(UDP/mountd) 32765"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 32765
+  }
+  ## <-- statd
+  ## --> lockd
+  ingress {
+    protocol       = "TCP"
+    description    = "(TCP/mountd) 43081"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 43081
+  }
+  ingress {
+    protocol       = "UDP"
+    description    = "(UDP/mountd) 43081"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    port           = 43081
+  }
+  ## <-- lockd
+  # <-- INGRESS
+
+  # --> EGRES
+  egress {
+    protocol       = "ANY"
+    description    = "ANY ports to output in local subnet"
+    v4_cidr_blocks = var.yc_subnets_prefix_list
+    from_port      = 0
+    to_port        = 65535
+  }
+  # <-- EGRES
+}
+
 resource "yandex_vpc_security_group" "sg-alloy" {
   name        = "sg-alloy"
   description = "internal access for grafana.alloy"

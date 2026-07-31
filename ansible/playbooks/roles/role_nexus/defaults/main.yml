@@ -1,11 +1,14 @@
 # code: language=yaml
 ---
+
+## Nexus
 nexus_path: "/opt/nexus"
 nexus_data_path: "{{ nexus_path }}/data"
 
 nexus_local_directories:
   - "{{ nexus_path }}"
 
+## Databasus
 databasus_path: "/opt/databasus"
 databasus_data_path: "{{ databasus_path }}/data"
 

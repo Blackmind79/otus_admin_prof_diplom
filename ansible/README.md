@@ -1,5 +1,37 @@
 # Ansible block
 
+## О каталоге
+
+Ниже приведена информация по особенностям развертывания сервисов на VM.
+
+## Замеченные баги
+
+### Развертывание drupal
+
+По непонятное причине после развертывания сайта не применяются права `www-data` на папку сайтов.
+Даже с учетом того, что применяются права в entrypoint.
+
+Вероятно после развертывания идут еще какие-то процессы, которые запускаются от root.
+Баг выражается в ошибке сохранения фото или других файлов в текст.
+
+После запуска контейнера на всякий случай проведите повторно назначение прав на папки (на srv-front):
+
+```bash
+sudo docker exec -it portfolio chown -R www-data:www-data /var/www/html/sites
+sudo docker exec -it portfolio find /var/www/html/sites -type d -exec chmod 755 {} \;
+sudo docker exec -it portfolio find /var/www/html/sites -type f -exec chmod 644 {} \;
+```
+
+Файлы находятся в томе, так что это разовая операция
+
+## Предварительные действия перед развертыванием
+
+Создайте два файла `.vault.pwd` и `.vault.notenc` по их примерам `.vault.pwd.example` и `.vault.notenc.example` соответственно.
+Зашифруйте хранилище, как описано ниже.
+
+Если вы работаете над проектом с кем-либо и вам нужно хранить креды в репозитории, то можете передать
+полученный файл `.vault.enc`. И только ваши коллеги, который знают пароль `.vault.pwd` смогут деплоить.
+
 ## Шифрование секретов
 
 Для шифрования секретов введите
@@ -77,4 +109,46 @@ sudo -u postgres psql -c "SELECT slot_name, active, restart_lsn, wal_status FROM
 
 ```bash
 sudo -u postgres psql -c "SELECT pg_drop_replication_slot('standby_slot_{{ inventory_hostname }}');"
+```
+
+## NSF папка бэкапов
+
+На VM `srv-nexus.internal.net` развернут репозиторий `Nexus`, приложение архивирование Postgresql баз `Databasus`, а также NFS папка.
+
+Настройки на сервер NFS лежат в `ansible/group_vars/all.yaml`.
+Если нужно - укажите другой сервер в переменных и перенесите код настройки
+сервера NFS на другой сервер (из `playbook_nexus.yml`).
+
+```bash
+nfs_global_server: "srv-nexus.internal.net"
+nfs_global_share: "/srv/nfs/backup"
+nfs_global_version: "4.2"
+nfs_client_mount_point: "/mnt/remote_backup"
+nfs_client_cidr: "10.130.0.0/24"
+```
+
+Посмотреть открытые папка NFS на сервере:
+
+```bash
+# Ресурсы
+exportfs -v
+
+# Упрощенно
+showmount -e localhost
+
+# Работа самого сервиса
+systemctl status nfs-kernel-server
+
+# Если интересны RPC сервисы
+rpcinfo -p
+```
+
+Проверка на клиенте:
+
+```bash
+## NFS4
+rpcinfo -p srv-nexus.internal.net
+
+## NFS3: showmount -e <IP_NFS_SERVER>
+#showmount -e srv-nexus.internal.net
 ```

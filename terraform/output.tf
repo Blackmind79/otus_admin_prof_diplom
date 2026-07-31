@@ -54,6 +54,9 @@ output "sg-front-id" {
 output "sg-nexus-id" {
   value = yandex_vpc_security_group.sg-nexus.id
 }
+output "sg-nfs-server-id" {
+  value = yandex_vpc_security_group.sg-nfs-server.id
+}
 output "sg-alloy-id" {
   value = yandex_vpc_security_group.sg-alloy.id
 }

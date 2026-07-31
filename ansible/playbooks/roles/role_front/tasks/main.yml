@@ -156,4 +156,88 @@
   community.docker.docker_compose_v2:
     project_src: "{{ drupal_path }}"
     state: present
+
+## --> drupal backup
+- name: "Create root folder [{{ drupal_scripts }}]"
+  become: true
+  file:
+    path: "{{ drupal_scripts }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: "Copy drupal backup script"
+  become: true
+  ansible.builtin.template:
+    src: "drupal.backup.jinja"
+    dest: "{{ drupal_scripts }}/backup.sh"
+    owner: root
+    group: root
+    mode: "0700"
+
+
+### --> S3 rclone backup
+- name: "Install required rclone packages"
+  become: true
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+    autoremove: yes
+    autoclean: yes
+  loop: "{{ rclone_packages }}"
+
+- name: "Create root folder for rclone config"
+  become: true
+  file:
+    path: "/root/.config/rclone"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: "Copy rclone config"
+  become: true
+  ansible.builtin.template:
+    src: "s3.conf.jinja"
+    dest: "/root/.config/rclone/rclone.conf"
+    owner: root
+    group: root
+    mode: "0700"
+### <-- S3 rclone backup
+
+- name: "Setup CRON for everyday backup at 03:00"
+  become: true
+  ansible.builtin.cron:
+    name: "Drupal backup"
+    minute: "0"
+    hour: "3"
+    job: "{{ drupal_scripts }}/backup.sh"
+## <-- drupal backup
 # <-- Drupal
+
+# --> NFS mount
+- name: "Install nfs-common package (NFS client)"
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  loop: "{{ nfs_client_packages }}"
+
+- name: "Create client mount point directory"
+  file:
+    path: "{{ nfs_client_mount_point }}"
+    state: directory
+    mode: '0755'
+
+- name: "Mount NFS share (temporary and add to fstab)"
+  mount:
+    path: "{{ nfs_client_mount_point }}"
+    src: "{{ nfs_global_server }}:{{ nfs_global_share }}"
+    fstype: nfs4  # Используем nfs4 для четкой идентификации
+    opts: "rw,vers={{ nfs_global_version }},hard,intr,timeo=600"  # Ключевая опция для NFSv4
+    state: mounted
+    backup: yes
+# <-- NFS mount

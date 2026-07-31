@@ -64,3 +64,78 @@
     project_src: "{{ databasus_path }}"
     state: present
 # <-- Restart docker
+
+# --> Create NFS server
+- name: "Install required system packages"
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  loop: "{{ nfs_server_packages }}"
+
+- name: "Create folder for NFS data"
+  ansible.builtin.file:
+    path: "{{ nfs_global_share }}"
+    state: directory
+    owner: nobody
+    group: nogroup
+    mode: "0777"
+## --> NFSv3
+- name: Configure NFS fixed ports
+  ansible.builtin.blockinfile:
+    path: "/etc/nfs.conf.d/00-nfs.conf"
+    block: |
+      [mountd]
+      port=20048
+
+      [statd]
+      port=32765
+
+      [lockd]
+      port=43081
+    create: true
+  notify:
+    - "Restart NFS server"
+
+- name: "Configure statd"
+  ansible.builtin.lineinfile:
+    path: "/etc/default/nfs-common"
+    regexp: '^NEED_STATD='
+    line: 'NEED_STATD=yes'
+
+- name: "Configure statd port"
+  ansible.builtin.lineinfile:
+    path: "/etc/default/nfs-common"
+    regexp: '^STATDOPTS='
+    line: 'STATDOPTS="--port 32765"'
+    create: true
+
+- name: "Configure lockd ports"
+  ansible.builtin.copy:
+    dest: "/etc/modprobe.d/lockd.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      options lockd nlm_tcpport=43081
+      options lockd nlm_udpport=43081
+  notify:
+    - "Reboot server"
+## <-- NFSv3
+- name: "Start and enable NFS service"
+  ansible.builtin.service:
+    name: "nfs-kernel-server"
+    state: started
+    enabled: true
+## Reconfigure. Configure exports after the service is started to ensure NFS is available.
+- name: "Configure NFS"
+  ansible.builtin.lineinfile:
+    path: "/etc/exports"
+    regexp: "^{{ nfs_global_share }}"
+    line: "{{ nfs_global_share }} {{ nfs_client_cidr }}(rw,sync,no_subtree_check)"
+    create: true
+  notify:
+    - "Reload NFS exports"
+
+- meta: flush_handlers
+# <-- Create NFS server

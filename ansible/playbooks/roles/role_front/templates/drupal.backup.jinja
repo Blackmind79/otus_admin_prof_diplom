@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Start backup drupal site [{{ drupal_site_name }}]..."
+BACKUP_DIR="{{ drupal_container_backup_folder }}"
+SITE_DIR="/opt/drupal"
+BACKUP_ARCH_NAME="${BACKUP_DIR}/drupal-site-$(date +%F-%H%M).tar.gz"
+
+## To avoid message 'tar: Removing leading '/' from member names' change dir
+cd "${SITE_DIR}"
+docker exec -t {{ drupal_site_name }} tar -czf "${BACKUP_ARCH_NAME}" .
+
+## if backup folder is not mounted to NAS, use rsync:
+# rsync -avz "${BACKUP_DIR}/" "path_to_external_backup_destination"
+rsync -avz "${BACKUP_DIR}/" "{{ nfs_client_mount_point }}"
+
+## Copy to S3
+# rclone copy /путь/к/файлу.txt имя-хранилияща-в-конфиге-rclone:имя-вашего-бакета/
+rclone copy "${BACKUP_ARCH_NAME}" "{{ s3_rclone_config_name }}:{{ s3_bucket_name }}/"
+
+***********************
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "$(date) Start backup drupal site [{{ drupal_site_name }}]..."
+echo "--> start -----------------------------"
+CONTAINER_BACKUP_DIR="{{ drupal_container_backup_folder }}"
+CONTAINER_SITE_DIR="/opt/drupal"
+BACKUP_FN="drupal-site-$(date +%F-%H%M).tar.gz"
+BACKUP_FULL_NAME="${CONTAINER_BACKUP_DIR}/${BACKUP_FN}"
+
+HOST_BACKUP_DIR="{{ drupal_data_backup_path }}"
+
+## To avoid message 'tar: Removing leading '/' from member names' change dir
+cd "${CONTAINER_SITE_DIR}"
+docker exec -it portfolio tar -czf "${BACKUP_FULL_NAME}" .
+sleep 1
+
+## if backup folder is not mounted to NAS, use rsync:
+# rsync -avz "${HOST_BACKUP_DIR}/" "path_to_external_backup_destination"
+echo "Start rsync copy..."
+rsync -avz --no-owner --no-group "${HOST_BACKUP_DIR}/" "{{ nfs_client_mount_point }}/"
+
+## Copy to S3
+# rclone copy /path/to/file vault-name-in-rclone-config:bucket-name/
+echo "Start S3 copy..."
+rclone copy "${HOST_BACKUP_DIR}" "yandex-storage:s3-drupal/"
+
+## Delete archive local file
+echo "Delete archive local files..."
+find "${HOST_BACKUP_DIR}/" -type f -delete
+echo "$(date) <-- finished --------------------------"

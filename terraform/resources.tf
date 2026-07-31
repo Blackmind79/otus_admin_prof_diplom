@@ -33,7 +33,7 @@ resource "yandex_compute_instance" "srv-front-001" {
   }
   platform_id = "standard-v3"
   resources {
-    memory        = 2
+    memory        = 4
     cores         = 2
     core_fraction = 100
   }
@@ -74,6 +74,7 @@ resource "yandex_compute_instance" "srv-nexus" {
         yandex_vpc_security_group.sg-default.id,
         yandex_vpc_security_group.sg-ssh-only.id,
         yandex_vpc_security_group.sg-nexus.id,
+        yandex_vpc_security_group.sg-nfs-server.id,
         yandex_vpc_security_group.sg-alloy.id
     ]
     nat            = false
