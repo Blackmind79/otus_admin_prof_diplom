@@ -1,0 +1,13 @@
+services:
+
+  postgres_exporter:
+# Quay.io blocked often from Russia, so use hub.docker.com instead:
+#    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    image: "{{ img_pgexporter }}"
+    container_name: postgres_exporter
+    network_mode: host
+    restart: always
+    environment:
+      DATA_SOURCE_URI: ${DATA_SOURCE_URI}
+      DATA_SOURCE_USER: ${DATA_SOURCE_USER}
+      DATA_SOURCE_PASS: ${DATA_SOURCE_PASS}

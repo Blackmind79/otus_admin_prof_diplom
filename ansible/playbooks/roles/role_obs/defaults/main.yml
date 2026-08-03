@@ -10,6 +10,7 @@ grafana_provisioning_datasources_path: "{{ grafana_provisioning_path }}/datasour
 grafana_provisioning_dashboards_path: "{{ grafana_provisioning_path }}/dashboards"
 grafana_provisioning_alerting_path: "{{ grafana_provisioning_path }}/alerting"
 grafana_dashboards_path: "{{ obs_path }}/data/dashboards"
+loki_path: "{{ obs_path }}/data/loki"
 
 obs_local_directories:
   - "{{ obs_path }}"
@@ -20,12 +21,13 @@ obs_local_directories:
   - "{{ grafana_provisioning_dashboards_path }}"
   - "{{ grafana_provisioning_alerting_path }}"
   - "{{ grafana_dashboards_path }}"
-
+  - "{{ loki_path }}"
 
 ## --> Images
 ## Images internal
 img_mimir: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/mimir:latest"
 img_grafana: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/grafana:latest"
+img_loki: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/loki:latest"
 
 ## ...or Images Public
 # img_mimir: "grafana/mimir:latest"

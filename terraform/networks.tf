@@ -131,6 +131,13 @@ resource "yandex_vpc_security_group" "sg-server-postgre-internal" {
     v4_cidr_blocks    = var.yc_subnets_prefix_list
     port              = 5432
   }
+  # Postgres Exporter
+  ingress {
+    protocol          = "TCP"
+    description       = "Postgres exporter 9187"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 9187
+  }
   egress {
     protocol          = "TCP"
 #    description       = "(self) PostgreSQL port 5432"
@@ -138,6 +145,12 @@ resource "yandex_vpc_security_group" "sg-server-postgre-internal" {
     description       = "Internal PostgreSQL port 5432"
     v4_cidr_blocks    = var.yc_subnets_prefix_list
     port              = 5432
+  }
+  egress {
+    protocol          = "TCP"
+    description       = "Postgres exporter 9187"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 9187
   }
 }
 
@@ -456,6 +469,12 @@ resource "yandex_vpc_security_group" "sg-obs-server" {
     description       = "Grafana port 3000"
     v4_cidr_blocks    = var.yc_subnets_prefix_list
     port              = 3000
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "Loki port 3100"
+    v4_cidr_blocks    = var.yc_subnets_prefix_list
+    port              = 3100
   }
 
   # Egress

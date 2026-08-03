@@ -75,6 +75,7 @@ groups:
             CPU Usage: {{ printf "%.1f" $values.A.Value }}%
 
         labels:
+          instance: "{{ $labels.instance }}"    # ✅ ДОБАВЛЕНО
           severity: warning
           team: devops
           environment: production
@@ -151,6 +152,7 @@ groups:
             Memory Usage: {{ printf "%.1f" $values.A.Value }}%
 
         labels:
+          instance: "{{ $labels.instance }}"    # ✅ ДОБАВЛЕНО
           severity: critical
           team: devops
           environment: production
@@ -232,6 +234,7 @@ groups:
             Free: {{ printf "%.1f" $values.A.Value }}%
 
         labels:
+          instance: "{{ $labels.instance }}"    # ✅ ДОБАВЛЕНО
           severity: warning
           team: devops
           environment: production
@@ -303,6 +306,7 @@ groups:
             Target is unreachable for more than 2 minutes.
 
         labels:
+          instance: "{{ $labels.instance }}"    # ✅ ДОБАВЛЕНО
           severity: critical
           team: devops
           environment: production

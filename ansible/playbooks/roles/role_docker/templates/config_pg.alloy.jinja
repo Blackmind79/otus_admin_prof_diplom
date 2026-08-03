@@ -1,6 +1,26 @@
 // =============================
 // mimir
 // =============================
+discovery.relabel "postgres_exporter" {
+  targets = [
+    {
+      __address__ = "localhost:9187",
+      job         = "postgres_exporter",
+      cluster     = "postgres-cluster",
+      environment = "production",
+      instance    = "{{ ansible_facts['hostname'] }}",
+      ip_address  = "{{ ansible_facts['default_ipv4']['address'] }}",
+    },
+  ]
+}
+
+prometheus.scrape "postgres_exporter" {
+  targets = discovery.relabel.postgres_exporter.output
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
 prometheus.remote_write "mimir" {
   endpoint {
     url = "{{ obs_server_proto }}://{{ obs_server_fqdn }}:{{ obs_server_port }}/api/v1/push"

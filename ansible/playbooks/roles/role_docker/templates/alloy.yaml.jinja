@@ -15,3 +15,10 @@ services:
       - /sys:/host/sys:ro
     environment:
       HOST_IP: "{{ ansible_facts.default_ipv4.address }}"
+    command:
+      - run
+      - "--server.http.listen-addr=0.0.0.0:12345"
+      - "/etc/alloy/config.alloy"
+      - "--storage.path=/var/lib/alloy/data"
+      - "--feature.community-components.enabled"
+      - "--stability.level=experimental"

@@ -2,10 +2,12 @@
 ---
 obs_path: "/opt/metrics"
 obs_config_alloy: "config.alloy"
+obs_config_pg_alloy: "config_pg.alloy"
 
 obs_server_proto: "http"
 obs_server_fqdn: "srv-obs.internal.net"
 obs_server_port: "9009"
+obs_server_loki_port: "3100"
 
 local_directories:
   - "{{ obs_path }}"

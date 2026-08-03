@@ -172,12 +172,12 @@
         path: "{{ pg_def_data_path }}_old"
       register: standby_data_old
 
-    - name: "Clean standby OLD data directory if data exists"
+    - name: "CLEAN standby OLD data directory"
       become: true
       ansible.builtin.file:
-        path: "{{ pg_def_data_path }}"
+        path: "{{ pg_def_data_path }}_old"
         state: absent
-      when: standby_data_old.stat.exists and not standby_data.stat.exists 
+      when: standby_data_old.stat.exists
 
     - name: "Move old PGDATA folder"
       ansible.builtin.command:
@@ -185,7 +185,7 @@
       become: true
       when: standby_data.stat.exists
 
-    - name: "Clean standby data directory"
+    - name: "CLEAN standby data directory"
       become: true
       ansible.builtin.file:
         path: "{{ pg_def_data_path }}"
@@ -288,6 +288,42 @@
   when: pgtype == "standby"
 # <-- check replica
 
+# --> Postgres exporter
+- name: "Create postgres_exporter folders"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+  loop: "{{ pg_exporter_local_directories }}"
+
+- name: "Copy postgres_exporter.env"
+  ansible.builtin.template:
+    src: "postgres_exporter.env.jinja"
+    dest: "{{ pg_exporter_path }}/.env"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: '0644'
+
+- name: "Copy postgres_exporter.yaml"
+  ansible.builtin.template:
+    src: "postgres_exporter.yaml.jinja"
+    dest: "{{ pg_exporter_path }}/{{ def_compose }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: '0644'
+
+- name: "Stop and remove containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ pg_exporter_path }}"
+    state: absent
+
+- name: "Start containers"
+  community.docker.docker_compose_v2:
+    project_src: "{{ pg_exporter_path }}"
+    state: present
+# <-- Postgres exporter
+
 # --> Setup UFW for postgres
 - name: "Install required packages"
   ansible.builtin.apt:
@@ -334,6 +370,12 @@
     port: '5432'
     proto: tcp
     # src: '10.130.0.0/24'
+
+- name: "Allow Postgres-exporter 9187"
+  ufw:
+    rule: allow
+    port: '9187'
+    proto: tcp
 
 - name: "Enable UFW with incoming policy DENY"
   ufw:

@@ -117,14 +117,23 @@
 # <-- Folders
 
 # --> Monitoring
-- name: "Copy monitoring manifest file"
+- name: "Copy default alloy config"
   ansible.builtin.template:
     src: "{{ obs_config_alloy }}.jinja"
     dest: "{{ obs_path }}/{{ obs_config_alloy }}"
-    #-rw-r--r--
     owner: "{{ global_remote_user }}"
     group: "{{ global_remote_user }}"
     mode: "0644"
+  when: pgtype is not defined
+
+- name: "Copy config for postgres_exporter for pg hosts)"
+  ansible.builtin.template:
+    src: "{{ obs_config_pg_alloy }}.jinja"
+    dest: "{{ obs_path }}/{{ obs_config_alloy }}"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+  when: pgtype is defined and (pgtype == "standby" or pgtype == "primary")
 
 - name: "Copy monitoring compose file"
   ansible.builtin.template:

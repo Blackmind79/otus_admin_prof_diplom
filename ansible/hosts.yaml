@@ -24,9 +24,9 @@ all:
         db_pg_001:
           ansible_host: 10.130.0.29
           pgtype: "primary"
-        # db_pg_replica_001:
-        #   ansible_host: 10.130.0.31
-        #   pgtype: "standby"
-        #   primary_host: "srv-pg.internal.net"
-        #   primary_port: 5432
+        db_pg_replica_001:
+          ansible_host: 10.130.0.31
+          pgtype: "standby"
+          primary_host: "srv-pg.internal.net"
+          primary_port: 5432
 

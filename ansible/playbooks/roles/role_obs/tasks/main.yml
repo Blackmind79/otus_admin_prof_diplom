@@ -87,7 +87,19 @@
     group: "{{ global_remote_user }}"
     mode: "0644"
 
-# grafana/dashboards/1860.json
+## --> Loki
+# loki_config.yaml
+- name: "Copy Loki config file"
+  ansible.builtin.copy:
+    src: "loki_config.yaml"
+    dest: "{{ obs_path }}/loki_config.yaml"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+## <-- Loki
+
+## --> Grafana dashboards
+### Node Exporter Full id=1860
 - name: "Copy grafana dashboard 1860 file"
   ansible.builtin.copy:
     src: "1860.json"
@@ -95,6 +107,23 @@
     owner: "{{ global_remote_user }}"
     group: "{{ global_remote_user }}"
     mode: "0644"
+### Loki docker logs
+- name: "Copy grafana dashboard 13639 file"
+  ansible.builtin.copy:
+    src: "13639.json"
+    dest: "{{ grafana_dashboards_path }}/13639.json"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+### Postgres-exporter
+- name: "Copy grafana dashboard 12485 file"
+  ansible.builtin.copy:
+    src: "12485.json"
+    dest: "{{ grafana_dashboards_path }}/12485.json"
+    owner: "{{ global_remote_user }}"
+    group: "{{ global_remote_user }}"
+    mode: "0644"
+## <-- Grafana dashboards
 
 - name: "Stop and remove containers"
   community.docker.docker_compose_v2:

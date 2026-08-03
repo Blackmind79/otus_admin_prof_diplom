@@ -25,3 +25,15 @@ pg_max_wal_senders: '10'         # Количество одновременны
 pg_max_replication_slots: '10'   # Количество слотов для репликации
 pg_wal_keep_size: '128MB'        # Объем WAL для хранения на случай отставания реплики
 pg_hot_standby: 'on'             # "off" disallows queries during recovery
+
+# postgres exporter
+pg_exporter_path: "/opt/pgexporter"
+pg_exporter_local_directories:
+  - "{{ pg_exporter_path }}"
+
+## --> Images
+## Images internal
+img_pgexporter: "{{ docker.insecure_registries.r01.host }}:{{ docker.insecure_registries.r01.port }}/postgres-exporter:latest"
+## ...or Images Public
+# img_pgexporter: "prometheuscommunity/postgres-exporter:latest"
+## <-- Images
